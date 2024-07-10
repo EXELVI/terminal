@@ -1,23 +1,89 @@
-document.title = 'exelvi@' + navigator.appName;
-
 document.addEventListener('DOMContentLoaded', function () {
     const inputElement = document.querySelector('.input');
     const outputElement = document.querySelector('.output');
     const terminalElement = document.querySelector('.terminal');
     const prompt = document.getElementById('prompt');
-    prompt.textContent = 'exelvi@' + navigator.appName + ':~$';
-    
+
+
+    let browserInfo = navigator.userAgent;
+    let browserName;
+
+    if (browserInfo.includes('Opera') || browserInfo.includes('Opr')) {
+        browserName = 'opera';
+    } else if (browserInfo.includes('Edg')) {
+        browserName = 'edge';
+    } else if (browserInfo.includes('Chrome')) {
+        browserName = 'chrome';
+    } else if (browserInfo.includes('Safari')) {
+        browserName = 'safari';
+    } else if (browserInfo.includes('Firefox')) {
+        browserName = 'firefox'
+    } else {
+        browserName = 'browser'
+    }
+
+    document.title = 'exelvi@' + browserName;
+
     let fileSystem = {
-        '/': {  // Root directory
+        '/': {
             home: {
-                user: {},  
-                
-            documents: {}  
+                user: {},
+
+                documents: { "troll.txt": "cat: troll.txt: Path not found" }
             },
         }
     };
 
     let currentDir = '/';
+    prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+    const fileSystemFunctions = {
+        changeFileContent: function (path, content) {
+            const file = navigateToPath(path);
+            if (typeof file === 'string') {
+                const parentDir = navigateToPath(path, true);
+                parentDir[getFileName(path)] = content;
+            } else {
+                return false
+            }
+        },
+        remove: function (path) {
+            const parentDir = navigateToPath(path, true);
+            delete parentDir[getFileName(path)];
+        },
+        createFile: function (path) {
+            const parentDir = navigateToPath(path, true);
+            parentDir[getFileName(path)] = '';
+        },
+        createDirectory: function (path) {
+            const parentDir = navigateToPath(path, true);
+            parentDir[getFileName(path)] = {};
+        },
+        readFileContent: function (path) {
+            const file = navigateToPath(path);
+            if (typeof file === 'string') {
+                return file;
+            } else {
+                return false;
+            }
+        }
+    };
+
+    function navigateToPath(path, parent = false) {
+        const parts = path.split('/').filter(part => part.length > 0);
+        let current = fileSystem['/'];
+        for (let i = 0; i < (parent ? parts.length - 1 : parts.length); i++) {
+            current = current[parts[i]];
+            if (current === undefined) {
+                throw new Error('Path not found');
+            }
+        }
+        return current;
+    }
+
+    function getFileName(path) {
+        const parts = path.split('/');
+        return parts[parts.length - 1];
+    }
 
     inputElement.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
@@ -32,6 +98,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (event.key === 'Escape' || event.key === 'Enter' || event.key === 'Tab') {
             event.preventDefault();
             inputElement.focus();
+        }
+        //IF ctrl+c is pressed
+        if (event.ctrlKey && event.key === 'c') {
+      
         }
     });
 
@@ -80,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
             name: 'color',
             description: 'Change the color of the terminal',
             execute: function (input) {
-                const colors = input.split(' ')[1].toUpperCase();
+                const colors = input.split(' ')[1]?.toUpperCase();
                 const colorMap = {
                     "0": "black",
                     "1": "blue",
@@ -116,7 +186,9 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const fileName = input.split(' ')[1];
                 if (fileName) {
-                    fileSystem[currentDir][fileName] = '';
+                    fileSystemFunctions.createFile(`${currentDir}/${fileName}`);
+                    const output = document.createElement('div');
+                    outputElement.appendChild(output);
                 } else {
                     const output = document.createElement('div');
                     output.textContent = 'touch: missing file operand';
@@ -126,14 +198,16 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'rm',
-            description: 'Delete a file',
+            description: 'Delete a file or directory',
             execute: function (input) {
-                const fileName = input.split(' ')[1];
-                if (fileName && fileSystem[currentDir][fileName] !== undefined) {
-                    delete fileSystem[currentDir][fileName];
-                } else {
+                const path = input.split(' ')[1];
+                try {
+                    fileSystemFunctions.remove(`${currentDir}/${path}`);
                     const output = document.createElement('div');
-                    output.textContent = `rm: ${fileName}: No such file`;
+                    outputElement.appendChild(output);
+                } catch (error) {
+                    const output = document.createElement('div');
+                    output.textContent = `rm: ${path}: ${error.message}`;
                     outputElement.appendChild(output);
                 }
             }
@@ -143,13 +217,14 @@ document.addEventListener('DOMContentLoaded', function () {
             description: 'Display the content of a file',
             execute: function (input) {
                 const fileName = input.split(' ')[1];
-                if (fileName && fileSystem[currentDir][fileName] !== undefined) {
+                try {
+                    const content = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
                     const output = document.createElement('div');
-                    output.textContent = fileSystem[currentDir][fileName];
+                    output.textContent = content;
                     outputElement.appendChild(output);
-                } else {
+                } catch (error) {
                     const output = document.createElement('div');
-                    output.textContent = `cat: ${fileName}: No such file`;
+                    output.textContent = `cat: ${fileName}: ${error.message}`;
                     outputElement.appendChild(output);
                 }
             }
@@ -159,30 +234,36 @@ document.addEventListener('DOMContentLoaded', function () {
             description: 'Append text to a file',
             execute: function (input) {
                 const parts = input.split(' ');
-                const textIndex = input.indexOf('>') + 1;
                 const fileName = parts[parts.length - 1];
-                const text = input.substring(5, textIndex - 1).trim();
-                if (fileName && text) {
-                    if (fileSystem[currentDir][fileName] === undefined) {
-                        fileSystem[currentDir][fileName] = '';
-                    }
-                    fileSystem[currentDir][fileName] += text;
+                const text = input.substring(5, input.indexOf('>')).trim();
+                try {
+                    const currentContent = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
+                    fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, currentContent + text);
                     const output = document.createElement('div');
                     output.textContent = `Appended to ${fileName}: ${text}`;
                     outputElement.appendChild(output);
-                } else {
-                    const output = document.createElement('div');
-                    output.textContent = 'Usage: echo [text] > [filename]';
-                    outputElement.appendChild(output);
+                } catch (error) {
+                    if (error.message === 'Path not found') {
+                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`);
+                        fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, text);
+                        const output = document.createElement('div');
+                        output.textContent = `Created and appended to ${fileName}: ${text}`;
+                        outputElement.appendChild(output);
+                    } else {
+                        const output = document.createElement('div');
+                        output.textContent = `echo: ${fileName}: ${error.message}`;
+                        outputElement.appendChild(output);
+                    }
                 }
             }
         },
         {
             name: 'ls',
-            description: 'List files and directories in the current directory',
+            description: 'List files in the current directory',
             execute: function () {
+                const currentDirContent = navigateToPath(currentDir);
                 const output = document.createElement('div');
-                output.textContent = Object.keys(fileSystem[currentDir]).join(' ');
+                output.textContent = Object.keys(currentDirContent).join(' ');
                 outputElement.appendChild(output);
             }
         },
@@ -192,7 +273,9 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const directoryName = input.split(' ')[1];
                 if (directoryName) {
-                    fileSystem[currentDir][directoryName] = {};
+                    fileSystemFunctions.createDirectory(`${currentDir}/${directoryName}`);
+                    const output = document.createElement('div');
+                    outputElement.appendChild(output);
                 } else {
                     const output = document.createElement('div');
                     output.textContent = 'mkdir: missing operand';
@@ -216,17 +299,32 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'cd',
-            description: 'Change directory',
+            description: 'Change the current directory',
             execute: function (input) {
                 const directoryName = input.split(' ')[1];
-                if (directoryName && fileSystem[currentDir][directoryName] !== undefined) {
-                    currentDir += '/' + directoryName;
-                } else {
+                try {
+                    if (directoryName === '..') {
+                        currentDir = currentDir.substring(0, currentDir.lastIndexOf('/')) || '/';
+                        prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+                    } else {
+                        const newDir = `${currentDir}/${directoryName}`.replace('//', '/');
+                        const target = navigateToPath(newDir);
+                        if (typeof target === 'object') {
+                            currentDir = newDir;
+                            prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+                        } else {
+                            throw new Error('No such file or directory');
+                        }
+                    }
+                } catch (error) {
                     const output = document.createElement('div');
-                    output.textContent = `cd: ${directoryName}: No such directory`;
+                    console.log(error)
+                    output.textContent = `cd: ${directoryName}: No such file or directory`;
                     outputElement.appendChild(output);
                 }
             }
+
+
         },
         {
             name: 'pwd',
@@ -241,7 +339,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function handleCommand(input) {
         const output = document.createElement('div');
-        output.textContent = `exelvi@${navigator.appName}:${currentDir}$ ${input}`;
+        output.textContent = `exelvi@${browserName}:${currentDir}$ ${input}`;
+        prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
         outputElement.appendChild(output);
 
         const command = commands.find(function (command) {
