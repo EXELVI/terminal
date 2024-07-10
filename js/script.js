@@ -1,8 +1,57 @@
+const ascii = { // ASCII from neofetch: https://github.com/dylanaraps/neofetch
+    "chrome": (c1, c2, c3, c4, c5, browserName, user, dividerBar, uptime) => `
+<span>${c2}            .,:loool:,.                 ${c1}${user}@${browserName}
+${c2}        .,coooooooooooooc,.             <span style='color: #ffffff'>${dividerBar}
+${c2}     .,lllllllllllllllllllll,.          ${c2}OS: <span style='color: #ffffff'>Browser
+${c2}    ;ccccccccccccccccccccccccc;         ${c2}Host: <span style='color: #ffffff'>${navigator.vendor}
+${c1}  '${c2}ccccccccccccccccccccccccccccc.       ${c2}Kernel: <span style='color: #ffffff'>${window.navigator.userAgent.split(" ")[0]}
+${c1} ,oo${c2}c::::::::okO${c5}000${c3}0OOkkkkkkkkkkk:      ${c2}Uptime: <span style='color: #ffffff'>${uptime}
+${c1}.ooool${c2};;;;:x${c5}K0${c4}kxxxxxk${c5}0X${c3}K0000000000.     ${c2}Packages: <span style='color: #ffffff'>0
+${c1}:oooool${c2};,;O${c5}K${c4}ddddddddddd${c5}KX${c3}000000000d     ${c2}Shell: <span style='color: #ffffff'>Bash
+${c1}lllllool${c2};l${c5}N${c4}dllllllllllld${c5}N${c3}K000000000     ${c2}Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}
+${c1}lllllllll${c2}o${c5}M${c4}dccccccccccco${c5}W${c3}K000000000     
+${c1};cllllllllX${c5}X${c4}c:::::::::c${c5}0X${c3}000000000d
+${c1}.ccccllllllO${c5}Nk${c4}c;,,,;cx${c5}KK${c3}0000000000.
+${c1} .cccccclllllxOO${c5}OOO${c1}Okx${c3}O0000000000;
+${c1}  .:ccccccccllllllllo${c3}O0000000OOO,
+${c1}    ,:ccccccccclllcd${c3}0000OOOOOOl.
+${c1}      '::ccccccccc${c3}dOOOOOOOkx:.
+${c1}        ..,::cccc${c3}xOOOkkko;.
+${c1}            ..,:${c3}dOkxl:.</span>
+`,
+    "safari": (c1, c2, c3, c4, c5, c6, browserName, user, dividerBar, uptime) => `
+ <span>${c1}                    'c.           ${user}@${browserName}
+${c1}                 ,xNMM.            <span style='color: #ffffff'>${dividerBar}
+${c1}               .OMMMMo             ${c2}OS: <span style='color: #ffffff'>Browser
+${c1}               OMMM0,              ${c2}Host: <span style='color: #ffffff'>${navigator.vendor}
+${c1}     .;loddo:' loolloddol;.        ${c2}Kernel: <span style='color: #ffffff'>${window.navigator.userAgent.split(" ")[0]}
+${c1}   cKMMMMMMMMMMNWMMMMMMMMMM0:      ${c2}Uptime: <span style='color: #ffffff'>${uptime}
+${c2} .KMMMMMMMMMMMMMMMMMMMMMMMWd.      ${c2}Packages: <span style='color: #ffffff'>0
+${c2} XMMMMMMMMMMMMMMMMMMMMMMMX.        ${c2}Shell: <span style='color: #ffffff'>Bash
+${c3};MMMMMMMMMMMMMMMMMMMMMMMM:         ${c2}Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}
+${c3}:MMMMMMMMMMMMMMMMMMMMMMMM:                
+${c4}.MMMMMMMMMMMMMMMMMMMMMMMMX.               
+ ${c4}kMMMMMMMMMMMMMMMMMMMMMMMMWd.             
+ ${c5}.XMMMMMMMMMMMMMMMMMMMMMMMMMMk            
+  ${c5}.XMMMMMMMMMMMMMMMMMMMMMMMMK.            
+    ${c6}kMMMMMMMMMMMMMMMMMMMMMMd
+     ;KMMMMMMMWXXWMMMMMMMk.
+       .cooc,.    .,coo:. </span>
+    `
+} //For now only this two browsers
+
+const asciiColors = {
+    "chrome": ["</span><span style='color: #34a853'>", "</span><span style='color: #ea4335'>", "</span><span style='color: #fbbc05'>", "</span><span style='color: #4285f4'>", "</span><span style='color: #ffffff'>"],
+    "safari": ["</span><span style='color: #15b40c'>", "</span><span style='color: #f9f0a4'>", "</span><span style='color: #e74957'>", "</span><span style='color: #e74957'>", "</span><span style='color: #b5019e'>", "</span><span style='color: #3b78ff'>"]
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const inputElement = document.querySelector('.input');
     const outputElement = document.querySelector('.output');
     const terminalElement = document.querySelector('.terminal');
     const prompt = document.getElementById('prompt');
+
+    let startDate = new Date();
 
 
     let browserInfo = navigator.userAgent;
@@ -415,36 +464,55 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (settingsUser) {
                     if (settingsUser.password == "") {
                         settings.currentUser = user;
-                        prompt.textContent =   settings.currentUser +'@' + browserName + ':' + currentDir + '$';
-                        document.title = settings.currentUser + '@' + browserName;   
+                        prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
+                        document.title = settings.currentUser + '@' + browserName;
                     } else {
-                       //to implement
+                        //to implement
                     }
                 }
             }
         },
         {
-            name: 'curl', 
+            name: 'curl',
             root: false,
-            description: 'Fetch the content from a URL',
+            description: 'Fetch the content from a URL, can\'t use the curl user-agent so you mostly will get html content',
             execute: function (input) {
                 var url = input.split(' ')[1];
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     url = 'https://' + url;
                 }
-        
-                //ajax
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', url, true);
-                //curl/8.7.1 headers
-                xhr.setRequestHeader('User-Agent', 'curl/8.7.1');
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState == 4 && xhr.status == 200) {
+                fetch(url, { mode: 'no-cors' })
+                    .then(response => response.text())
+                    .then(data => {
                         const output = document.createElement('div');
-                        output.textContent = xhr.responseText;
+                        output.textContent = data;
                         outputElement.appendChild(output);
-                    }
+                    }).catch(error => {
+                        const output = document.createElement('div');
+                        output.textContent = error;
+                        outputElement.appendChild(output);
+                    });
+
+            }
+        },
+        {
+            name: 'neofetch',
+            root: false,
+            description: 'Print system information',
+            execute: function () {
+                const output = document.createElement('div');
+                var deviceName = settings.currentUser + '@' + browserName;
+                var dividerBar;
+                if (deviceName.length % 2 == 0) {
+                    dividerBar = '-'.repeat(deviceName.length);
+                } else {
+                    dividerBar = '-'.repeat(deviceName.length - 1);
                 }
+                output.innerHTML = ascii[browserName](...asciiColors[browserName] ,browserName, settings.currentUser, dividerBar, (new Date() - startDate) / 1000 + 's');
+                outputElement.appendChild(output);
+
+
+
             }
         }
     ];
@@ -452,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function handleCommand(input) {
         const output = document.createElement('div');
         output.textContent = `${settings.currentUser}@${browserName}:${currentDir}$ ${input}`;
-        prompt.textContent =   settings.currentUser +'@' + browserName + ':' + currentDir + '$';
+        prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
         outputElement.appendChild(output);
 
         const command = commands.find(function (command) {
