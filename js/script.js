@@ -37,13 +37,62 @@ ${c4}.MMMMMMMMMMMMMMMMMMMMMMMMX.
     ${c6}kMMMMMMMMMMMMMMMMMMMMMMd
      ;KMMMMMMMWXXWMMMMMMMk.
        .cooc,.    .,coo:. </span>
-    `
+    `,
+    "firefox": (c1, c2, browserName, user, dividerBar, uptime) => `
+<span style="color: ${c1}">${user}@${browserName}</span>
+<span style="color: #ffffff">${dividerBar}</span>
+<span style="color: ${c2};">OS: <span style='color: #ffffff'>Browser</span>
+<span style="color: ${c2};">Host: <span style='color: #ffffff'>${navigator.vendor}</span>
+<span style="color: ${c2};">Kernel: <span style='color: #ffffff'>${window.navigator.userAgent.split(" ")[0]}</span>
+<span style="color: ${c2};">Uptime: <span style='color: #ffffff'>${uptime}</span>
+<span style="color: ${c2};">Packages: <span style='color: #ffffff'>0</span>
+<span style="color: ${c2};">Shell: <span style='color: #ffffff'>Bash</span>
+<span style="color: ${c2};">Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}</span>`,
+    "opera": (c1, c2, browserName, user, dividerBar, uptime) => `
+<span style="color: ${c1}">${user}@${browserName}</span>
+<span style="color: #ffffff">${dividerBar}</span>
+<span style="color: ${c2};">OS: <span style='color: #ffffff'>Browser</span>
+<span style="color: ${c2};">Host: <span style='color: #ffffff'>${navigator.vendor}</span>
+<span style="color: ${c2};">Kernel: <span style='color: #ffffff'>${window.navigator.userAgent.split(" ")[0]}</span>
+<span style="color: ${c2};">Uptime: <span style='color: #ffffff'>${uptime}</span>
+<span style="color: ${c2};">Packages: <span style='color: #ffffff'>0</span>
+<span style="color: ${c2};">Shell: <span style='color: #ffffff'>Bash</span>
+<span style="color: ${c2};">Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}</span>`,
+    "edge": (c1, c2, browserName, user, dividerBar, uptime) => `
+<span style="color: ${c1}">${user}@${browserName}</span>
+<span style="color: #ffffff">${dividerBar}</span>
+<span style="color: ${c2};">OS: <span style='color: #ffffff'>Browser</span>
+<span style="color: ${c2};">Host: <span style='color: #ffffff'>${navigator.vendor}</span>
+<span style="color: ${c2};">Kernel: <span style='color: #ffffff'>${window.navigator.userAgent.split(" ")[0]}</span>
+<span style="color: ${c2};">Uptime: <span style='color: #ffffff'>${uptime}</span>
+<span style="color: ${c2};">Packages: <span style='color: #ffffff'>0</span>
+<span style="color: ${c2};">Shell: <span style='color: #ffffff'>Bash</span>
+<span style="color: ${c2};">Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}</span>`,
+    "browser": (c1, c2, browserName, user, dividerBar, uptime) => `
+<span style="color: ${c1}">${user}@${browserName}</span>
+<span style="color: #ffffff">${dividerBar}</span>
+<span style="color: ${c2};">OS: <span style='color: #ffffff'>Browser</span>
+<span style="color: ${c2};">Host: <span style='color: #ffffff'>${navigator.vendor}</span>
+<span style="color: ${c2};">Kernel: <span style='color: #ffffff'>${window.navigator.userAgent.split(" ")[0]}</span>
+<span style="color: ${c2};">Uptime: <span style='color: #ffffff'>${uptime}</span>
+<span style="color: ${c2};">Packages: <span style='color: #ffffff'>0</span>
+<span style="color: ${c2};">Shell: <span style='color: #ffffff'>Bash</span>
+<span style="color: ${c2};">Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}</span>`,
+
+
 } //For now only this two browsers
 
 const asciiColors = {
     "chrome": ["</span><span style='color: #34a853'>", "</span><span style='color: #ea4335'>", "</span><span style='color: #fbbc05'>", "</span><span style='color: #4285f4'>", "</span><span style='color: #ffffff'>"],
-    "safari": ["</span><span style='color: #15b40c'>", "</span><span style='color: #f9f0a4'>", "</span><span style='color: #e74957'>", "</span><span style='color: #e74957'>", "</span><span style='color: #b5019e'>", "</span><span style='color: #3b78ff'>"]
+    "safari": ["</span><span style='color: #15b40c'>", "</span><span style='color: #f9f0a4'>", "</span><span style='color: #e74957'>", "</span><span style='color: #e74957'>", "</span><span style='color: #b5019e'>", "</span><span style='color: #3b78ff'>"],
+    "firefox": ["#e10f67", "#fb912c",],
+    "opera": ["#fa4a4a", "#af0510"],
+    "edge": ["#46d369", "#0980d0"],
+    "browser": ["#a9a9a9", "#dfdfdf"]
+
 }
+
+var mode = "normal"
 
 document.addEventListener('DOMContentLoaded', function () {
     const inputElement = document.querySelector('.input');
@@ -78,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
             home: {
                 exelvi: {
                     desktop: {
-                        "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n",
+                        "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n Pssss... Also try to type 'color enable'",
                     },
                     documents: { "troll.txt": "cat: troll.txt: Path not found" }
                 }
@@ -106,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         currentUser: "exelvi",
-        colors: true
+        colors: false
 
 
     }
@@ -121,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentDir = '/';
 
+
     if (localStorage.getItem('fileSystem')) {
         fileSystem = JSON.parse(localStorage.getItem('fileSystem'));
     }
@@ -131,7 +181,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (localStorage.getItem('bashHistory')) {
         bashHistory = JSON.parse(localStorage.getItem('bashHistory'));
     }
-
 
     const fileSystemFunctions = {
         changeFileContent: function (path, content) {
@@ -197,24 +246,70 @@ document.addEventListener('DOMContentLoaded', function () {
         matchingCommands,
         matchingFiles
 
-
+let tries = 0
 
     inputElement.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
-            const input = inputElement.value;
-            handleCommand(input);
-            inputElement.value = '';
             event.preventDefault();
+            const input = inputElement.value;
+            
+            if (mode.startsWith("supassword-")) {
+                const user = mode.split("-")[1]
+                if (settings.users[user].password == input) {
+                    settings.currentUser = user;
+                    prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
+                    document.title = settings.currentUser + '@' + browserName;
+                    mode = "normal"
+                    inputElement.type = 'text';
+                    inputElement.value = '';
+                    return
+                } else {
+                    tries++
+                    if (tries > 3) {
+                        var output = document.createElement('div');
+                        output.textContent = "Too many tries";
+                        outputElement.appendChild(output);
+                        inputElement.value = '';
+                        inputElement.type = 'text';
+                        if (settings.colors) {
+                            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        } else {
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        }
+
+                        mode = "normal"
+                        tries = 0
+                        return
+                    }
+                    var output = document.createElement('div');
+                    output.textContent = "Wrong password";
+                    outputElement.appendChild(output);
+                    inputElement.value = '';
+                    return
+                }               
+            }
+            else{
+                handleCommand(input);
+                inputElement.value = '';
+            }
+     
         }
 
         if (event.ctrlKey && event.key === 'c') {
             //if is focused on input
+            if (window.getSelection().toString() == '') {
 
-            const output = document.createElement('div');
-            output.textContent = '^C';
-            outputElement.appendChild(output);
-            terminalElement.scrollTop = terminalElement.scrollHeight;
-            inputElement.value = '';
+                const output = document.createElement('div');
+                output.textContent = '^C';
+                outputElement.appendChild(output);
+                terminalElement.scrollTop = terminalElement.scrollHeight;
+                inputElement.value = '';
+            } else {
+                event.preventDefault();
+                navigator.clipboard.writeText(window.getSelection().toString());
+                window.getSelection().removeAllRanges();
+                inputElement.focus();
+            }
         }
         if (event.key === 'ArrowUp') {
             if (hystoryPosition < bashHistory.length) {
@@ -297,7 +392,15 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (event.ctrlKey && event.key !== 'c' || event.metaKey || event.altKey || event.shiftKey) {
             } else {
-                if (window.getSelection().toString() != '') {
+                if (window.getSelection().toString() == '') {
+                    if (event.key.length === 1) {
+                        inputElement.value += event.key;
+                    }
+                    inputElement.focus();
+                } else {
+                    event.preventDefault();
+                    navigator.clipboard.writeText(window.getSelection().toString());
+                    window.getSelection().removeAllRanges();
                     inputElement.focus();
                 }
             }
@@ -542,7 +645,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     if (directoryName === '..') {
                         currentDir = currentDir.substring(0, currentDir.lastIndexOf('/')) || '/';
-                        prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+                        if (settings.colors) {
+                            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        } else {
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        }
                     } else {
                         const newDir = `${currentDir}/${directoryName}`.replace('//', '/');
                         const target = navigateToPath(newDir);
@@ -602,8 +709,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
                         document.title = settings.currentUser + '@' + browserName;
                     } else {
-                        //to implement
-                    }
+                        //ask for password
+                        inputElement.value = '';
+                        inputElement.type = 'password';
+                        inputElement.focus();
+                        prompt.textContent = 'Password:';
+                        mode = "supassword-" + user;
+                        tries = 0
+                        return false
+                     
+                    } 
                 }
             }
         },
@@ -644,11 +759,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.currentUser, dividerBar, (new Date() - startDate) / 1000 + 's');
                 return output;
-
-
-
+            }
+        },
+        {
+            name: 'exit',
+            root: false,
+            description: 'Close the terminal',
+            execute: function () {
+                var output = document.createElement('div');
+                output.textContent = 'Bye!';
+                window.location.href = 'https://exelvi.github.io';
+                return output;
+            }
+        },
+        {
+            name: 'usermod',
+            root: true,
+            description: 'Modify a user',
+            execute: function (input) {
+                const output = document.createElement('div');
+                const user = input.split(' ')[1];
+                const setting = input.split(' ')[2];
+                const value = input.split(' ')[3];
+                if (settings.users[user]) {
+                    settings.users[user][setting] = value;
+                    return output;
+                } else {
+                    output.textContent = 'usermod: user not found';
+                    return output;
+                }
             }
         }
+
     ];
 
 
@@ -658,6 +800,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (localStorage.getItem('currentDir')) {
         currentDir = localStorage.getItem('currentDir');
+    } else {
+        currentDir = settings.users[settings.currentUser].home;
     }
 
 
@@ -669,24 +813,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function handleCommand(input) {
         const output = document.createElement('div');
+
         bashHistory.push(input);
         hystoryPosition = 0;
         if (settings.colors) {
             output.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$ ${input}`;
-            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
         } else {
             output.textContent = `${settings.currentUser}@${browserName}:${currentDir}$ ${input}`;
-            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
         }
-
-        outputElement.appendChild(output);
-
         const command = commands.find(function (command) {
             return input.split(' ')[0] === command.name;
         });
 
+
+        outputElement.appendChild(output);
+
         if (command) {
             var out = command.execute(input);
+            if (!out) return
 
             var inputParts = input.split(' ');
             if (inputParts[inputParts.length - 2] === '>') {
@@ -695,24 +839,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     var fileName = inputParts[inputParts.length - 1];
                     //remove the last two elements
-                    var fileContentParts = inputParts.split(" ");
-                    var fileContent = fileContentParts.slice(0, -2).join(" ");
-
-
                     if (fileName in navigateToPath(currentDir)) {
-                        fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, fileContent);
+                        fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, out.textContent);
                     } else {
-                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`, fileContent);
+                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`, out.textContent);
                     }
                 }
 
             } else {
                 outputElement.appendChild(out);
             }
+            
         } else {
             const commandOutput = document.createElement('div');
             commandOutput.textContent = `bash: ${input}: command not found`;
             outputElement.appendChild(commandOutput);
+        }
+
+        if (settings.colors) {
+            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+        }
+        else {
+            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
         }
 
         terminalElement.scrollTop = terminalElement.scrollHeight;
