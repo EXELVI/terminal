@@ -27,12 +27,43 @@ document.addEventListener('DOMContentLoaded', function () {
     let fileSystem = {
         '/': {
             home: {
-                user: {},
-
-                documents: { "troll.txt": "cat: troll.txt: Path not found" }
+                exelvi: {
+                    documents: { "troll.txt": "cat: troll.txt: Path not found" }
+                }
             },
+            root: {
+
+            }
         }
     };
+
+    let settings = {
+        users: {
+            "exelvi": {
+                "password": "password", //easy :)
+                "home": "/home/exelvi",
+                "permissions": {
+                    "/home/exelvi": true,
+                }
+
+            },
+            "root": {
+                "password": "ifyoucanreadthisyouareahacker",
+                "home": "/root",
+                "permissions": true
+            }
+        },
+        currentUser: "exelvi",
+
+
+    }
+
+    function getPermissions(path, user) {
+        return true //to implement
+
+    }
+
+    let bashHistory = [];
 
     let currentDir = '/';
     prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
@@ -50,9 +81,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const parentDir = navigateToPath(path, true);
             delete parentDir[getFileName(path)];
         },
-        createFile: function (path) {
+        createFile: function (path, content = '') {
             const parentDir = navigateToPath(path, true);
-            parentDir[getFileName(path)] = '';
+            parentDir[getFileName(path)] = content;
         },
         createDirectory: function (path) {
             const parentDir = navigateToPath(path, true);
@@ -101,7 +132,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         //IF ctrl+c is pressed
         if (event.ctrlKey && event.key === 'c') {
-      
+            //if is focused on input
+            if (document.activeElement != inputElement) {
+                const output = document.createElement('div');
+                output.textContent = '^C';
+                outputElement.appendChild(output);
+                terminalElement.scrollTop = terminalElement.scrollHeight;
+                inputElement.value = '';
+            }
         }
     });
 
@@ -109,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
         {
             name: 'help',
             description: 'List all available commands',
+            root: false,
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = 'Available commands:';
@@ -123,6 +162,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'clear',
+            root: false,
             description: 'Clear the terminal',
             execute: function () {
                 outputElement.innerHTML = '';
@@ -130,6 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'echo',
+            root: false,
             description: 'Prints text to the terminal',
             execute: function (input) {
                 const output = document.createElement('div');
@@ -139,6 +180,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'date',
+            root: false,
             description: 'Prints the current date and time',
             execute: function () {
                 const output = document.createElement('div');
@@ -148,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'color',
+            root: false,
             description: 'Change the color of the terminal',
             execute: function (input) {
                 const colors = input.split(' ')[1]?.toUpperCase();
@@ -182,22 +225,30 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'touch',
+            root: false,
             description: 'Create a new file',
             execute: function (input) {
-                const fileName = input.split(' ')[1];
-                if (fileName) {
-                    fileSystemFunctions.createFile(`${currentDir}/${fileName}`);
-                    const output = document.createElement('div');
-                    outputElement.appendChild(output);
+                if (getPermissions(currentDir, settings.currentUser)) {
+                    const fileName = input.split(' ')[1];
+                    if (fileName) {
+                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`, fileName == "grass.txt" ? "Time to go outside :)" : "");
+                        const output = document.createElement('div');
+                        outputElement.appendChild(output);
+                    } else {
+                        const output = document.createElement('div');
+                        output.textContent = 'touch: missing file operand';
+                        outputElement.appendChild(output);
+                    }
                 } else {
                     const output = document.createElement('div');
-                    output.textContent = 'touch: missing file operand';
+                    output.textContent = 'bash: touch: Permission denied';
                     outputElement.appendChild(output);
                 }
             }
         },
         {
             name: 'rm',
+            root: false,
             description: 'Delete a file or directory',
             execute: function (input) {
                 const path = input.split(' ')[1];
@@ -214,6 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'cat',
+            root: false,
             description: 'Display the content of a file',
             execute: function (input) {
                 const fileName = input.split(' ')[1];
@@ -231,6 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'echo',
+            root: false,
             description: 'Append text to a file',
             execute: function (input) {
                 const parts = input.split(' ');
@@ -259,6 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'ls',
+            root: false,
             description: 'List files in the current directory',
             execute: function () {
                 const currentDirContent = navigateToPath(currentDir);
@@ -269,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'mkdir',
+            root: false,
             description: 'Create a new directory',
             execute: function (input) {
                 const directoryName = input.split(' ')[1];
@@ -285,6 +340,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'rmdir',
+            root: false,
             description: 'Remove an empty directory',
             execute: function (input) {
                 const directoryName = input.split(' ')[1];
@@ -299,6 +355,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'cd',
+            root: false,
             description: 'Change the current directory',
             execute: function (input) {
                 const directoryName = input.split(' ')[1];
@@ -328,19 +385,74 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         {
             name: 'pwd',
+            root: false,
             description: 'Print current directory path',
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = currentDir;
                 outputElement.appendChild(output);
             }
+        },
+        {
+            name: 'whoami',
+            root: false,
+            description: 'Print the current user',
+            execute: function () {
+                const output = document.createElement('div');
+                output.textContent = settings.currentUser;
+                outputElement.appendChild(output);
+            }
+            ,
+        }, {
+            name: 'su',
+            root: false,
+            description: 'Change user',
+            execute: function (input) {
+                const user = input.split(' ')[1];
+
+                const settingsUser = settings.users[user];
+
+                if (settingsUser) {
+                    if (settingsUser.password == "") {
+                        settings.currentUser = user;
+                        prompt.textContent =   settings.currentUser +'@' + browserName + ':' + currentDir + '$';
+                        document.title = settings.currentUser + '@' + browserName;   
+                    } else {
+                       //to implement
+                    }
+                }
+            }
+        },
+        {
+            name: 'curl', 
+            root: false,
+            description: 'Fetch the content from a URL',
+            execute: function (input) {
+                var url = input.split(' ')[1];
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+        
+                //ajax
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                //curl/8.7.1 headers
+                xhr.setRequestHeader('User-Agent', 'curl/8.7.1');
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        const output = document.createElement('div');
+                        output.textContent = xhr.responseText;
+                        outputElement.appendChild(output);
+                    }
+                }
+            }
         }
     ];
 
     function handleCommand(input) {
         const output = document.createElement('div');
-        output.textContent = `exelvi@${browserName}:${currentDir}$ ${input}`;
-        prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+        output.textContent = `${settings.currentUser}@${browserName}:${currentDir}$ ${input}`;
+        prompt.textContent =   settings.currentUser +'@' + browserName + ':' + currentDir + '$';
         outputElement.appendChild(output);
 
         const command = commands.find(function (command) {
