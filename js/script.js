@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let startDate = new Date();
 
-
     let browserInfo = navigator.userAgent;
     let browserName;
 
@@ -77,6 +76,9 @@ document.addEventListener('DOMContentLoaded', function () {
         '/': {
             home: {
                 exelvi: {
+                    desktop: {
+                        "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n",
+                    },
                     documents: { "troll.txt": "cat: troll.txt: Path not found" }
                 }
             },
@@ -103,9 +105,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         currentUser: "exelvi",
+        colors: true
 
 
     }
+
 
     function getPermissions(path, user) {
         return true //to implement
@@ -115,7 +119,26 @@ document.addEventListener('DOMContentLoaded', function () {
     let bashHistory = [];
 
     let currentDir = '/';
-    prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+
+    if (localStorage.getItem('fileSystem')) {
+        fileSystem = JSON.parse(localStorage.getItem('fileSystem'));
+    }
+    if (localStorage.getItem('settings')) {
+        settings = JSON.parse(localStorage.getItem('settings'));
+    }
+    if (localStorage.getItem('currentDir')) {
+        currentDir = localStorage.getItem('currentDir');
+    }
+    if (localStorage.getItem('bashHistory')) {
+        bashHistory = JSON.parse(localStorage.getItem('bashHistory'));
+    }
+
+    if (settings.colors) {
+        prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+    } else {
+        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+    }
+
     const fileSystemFunctions = {
         changeFileContent: function (path, content) {
             const file = navigateToPath(path);
@@ -172,22 +195,33 @@ document.addEventListener('DOMContentLoaded', function () {
             inputElement.value = '';
             event.preventDefault();
         }
+
+        if (event.ctrlKey && event.key === 'c') {
+            //if is focused on input
+
+            const output = document.createElement('div');
+            output.textContent = '^C';
+            outputElement.appendChild(output);
+            terminalElement.scrollTop = terminalElement.scrollHeight;
+            inputElement.value = '';
+
+        }
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape' || event.key === 'Enter' || event.key === 'Tab') {
-            event.preventDefault();
-            inputElement.focus();
-        }
-        //IF ctrl+c is pressed
-        if (event.ctrlKey && event.key === 'c') {
-            //if is focused on input
-            if (document.activeElement != inputElement) {
-                const output = document.createElement('div');
-                output.textContent = '^C';
-                outputElement.appendChild(output);
-                terminalElement.scrollTop = terminalElement.scrollHeight;
-                inputElement.value = '';
+        if (document.activeElement != inputElement) {
+            if (event.ctrlKey && event.key === 'c') {
+            } else {
+                if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) {
+                } else {
+                    event.preventDefault();
+                }
+            }
+            if (event.ctrlKey && event.key !== 'c' || event.metaKey || event.altKey || event.shiftKey) {
+            } else {
+                if (window.getSelection().toString() != '') {
+                    inputElement.focus();
+                }
             }
         }
     });
@@ -200,13 +234,17 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = 'Available commands:';
-                outputElement.appendChild(output);
                 commands.forEach(function (command) {
                     const commandOutput = document.createElement('div');
-                    commandOutput.textContent = `${command.name}: ${command.description}`;
-                    outputElement.appendChild(commandOutput);
+                    let descriptionPos = ' '.repeat(15 - command.name.length);
+                    if (command.description.length > 50) { 
+                        command.description = command.description.substring(0, 40) + '\n' + ' '.repeat(15) + command.description.substring(40);
+                    }
+                    commandOutput.textContent = `${command.name}${descriptionPos}${command.description}`;
+                    output.appendChild(commandOutput);
                 });
                 terminalElement.scrollTop = terminalElement.scrollHeight;
+                outputElement.appendChild(output);
             }
         },
         {
@@ -242,6 +280,15 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Change the color of the terminal',
             execute: function (input) {
+                if (input.split(' ')[1] === 'enable') {
+                    settings.colors = true;
+                    prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                    return;
+                } else if (input.split(' ')[1] === 'disable') {
+                    prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                    settings.colors = false;
+                    return;
+                }
                 const colors = input.split(' ')[1]?.toUpperCase();
                 const colorMap = {
                     "0": "black",
@@ -264,11 +311,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!colors) {
                     terminalElement.style.backgroundColor = 'black';
                     terminalElement.style.color = 'white';
+                    settings.colors = false;
                 } else {
                     const backgroundColor = colorMap[colors[0]];
                     const textColor = colorMap[colors[1]];
                     terminalElement.style.backgroundColor = backgroundColor;
                     terminalElement.style.color = textColor;
+                    settings.colors = false;
                 }
             }
         },
@@ -321,7 +370,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 try {
                     const content = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
                     const output = document.createElement('div');
-                    output.textContent = content;
+                    if (content.startsWith('<!DOCTYPE html>')) {
+                        if (settings.colors) {
+                            //parse color= and set to style="color: color"
+                            output.innerHTML = content.replace(/color='(.*?)'/g, 'style="color: $1"');
+
+                        } else {
+                            output.innerHTML = content;
+                        }
+
+                    } else {
+                        output.textContent = content;
+                    }
                     outputElement.appendChild(output);
                 } catch (error) {
                     const output = document.createElement('div');
@@ -333,30 +393,12 @@ document.addEventListener('DOMContentLoaded', function () {
         {
             name: 'echo',
             root: false,
-            description: 'Append text to a file',
+            description: 'Prints text to the terminal',
             execute: function (input) {
-                const parts = input.split(' ');
-                const fileName = parts[parts.length - 1];
-                const text = input.substring(5, input.indexOf('>')).trim();
-                try {
-                    const currentContent = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
-                    fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, currentContent + text);
-                    const output = document.createElement('div');
-                    output.textContent = `Appended to ${fileName}: ${text}`;
-                    outputElement.appendChild(output);
-                } catch (error) {
-                    if (error.message === 'Path not found') {
-                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`);
-                        fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, text);
-                        const output = document.createElement('div');
-                        output.textContent = `Created and appended to ${fileName}: ${text}`;
-                        outputElement.appendChild(output);
-                    } else {
-                        const output = document.createElement('div');
-                        output.textContent = `echo: ${fileName}: ${error.message}`;
-                        outputElement.appendChild(output);
-                    }
-                }
+                const output = document.createElement('div');
+                output.textContent = input.substring(5);
+                outputElement.appendChild(output);
+
             }
         },
         {
@@ -366,8 +408,17 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const currentDirContent = navigateToPath(currentDir);
                 const output = document.createElement('div');
-                output.textContent = Object.keys(currentDirContent).join(' ');
+
+                Object.keys(currentDirContent).forEach(function (item) {
+                    if (typeof currentDirContent[item] === 'object') {
+                        output.innerHTML += `<span style="color: #3f65bd">${item}</span> `;
+                    } else {
+                        output.innerHTML += `${item} `;
+                    }
+
+                });
                 outputElement.appendChild(output);
+
             }
         },
         {
@@ -417,7 +468,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         const target = navigateToPath(newDir);
                         if (typeof target === 'object') {
                             currentDir = newDir;
-                            prompt.textContent = 'exelvi@' + browserName + ':' + currentDir + '$';
+                            if (settings.colors) {
+                                prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            } else {
+                                prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            }
                         } else {
                             throw new Error('No such file or directory');
                         }
@@ -508,7 +563,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     dividerBar = '-'.repeat(deviceName.length - 1);
                 }
-                output.innerHTML = ascii[browserName](...asciiColors[browserName] ,browserName, settings.currentUser, dividerBar, (new Date() - startDate) / 1000 + 's');
+                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.currentUser, dividerBar, (new Date() - startDate) / 1000 + 's');
                 outputElement.appendChild(output);
 
 
@@ -519,8 +574,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function handleCommand(input) {
         const output = document.createElement('div');
-        output.textContent = `${settings.currentUser}@${browserName}:${currentDir}$ ${input}`;
-        prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
+        bashHistory.push(input);
+        if (settings.colors) {
+            output.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$ ${input}`;
+            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+        } else {
+            output.textContent = `${settings.currentUser}@${browserName}:${currentDir}$ ${input}`;
+            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+        }
+
         outputElement.appendChild(output);
 
         const command = commands.find(function (command) {
@@ -536,5 +598,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         terminalElement.scrollTop = terminalElement.scrollHeight;
+
+        localStorage.setItem('bashHistory', JSON.stringify(bashHistory));
+        localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
+        localStorage.setItem('settings', JSON.stringify(settings));
+        localStorage.setItem('currentDir', currentDir);
     }
 });
