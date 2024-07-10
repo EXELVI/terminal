@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let fileSystem = {
         '/': {
+            "startMessage.txt": "Welcome to the terminal! \n\nType 'help' to see all available commands",
             home: {
                 exelvi: {
                     desktop: {
@@ -126,18 +127,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (localStorage.getItem('settings')) {
         settings = JSON.parse(localStorage.getItem('settings'));
     }
-    if (localStorage.getItem('currentDir')) {
-        currentDir = localStorage.getItem('currentDir');
-    }
+
     if (localStorage.getItem('bashHistory')) {
         bashHistory = JSON.parse(localStorage.getItem('bashHistory'));
     }
 
-    if (settings.colors) {
-        prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
-    } else {
-        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
-    }
 
     const fileSystemFunctions = {
         changeFileContent: function (path, content) {
@@ -188,6 +182,23 @@ document.addEventListener('DOMContentLoaded', function () {
         return parts[parts.length - 1];
     }
 
+    let hystoryPosition = 0;
+
+    let tabMachPosition = 0;
+    let tabMachCommandPosition = 0;
+    let first = true;
+    let firstFile = true;
+
+    var input,
+        command,
+        commandList,
+        fileListing,
+        fileNames,
+        matchingCommands,
+        matchingFiles
+
+
+
     inputElement.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             const input = inputElement.value;
@@ -204,8 +215,75 @@ document.addEventListener('DOMContentLoaded', function () {
             outputElement.appendChild(output);
             terminalElement.scrollTop = terminalElement.scrollHeight;
             inputElement.value = '';
-
         }
+        if (event.key === 'ArrowUp') {
+            if (hystoryPosition < bashHistory.length) {
+                hystoryPosition++;
+                inputElement.value = bashHistory[bashHistory.length - hystoryPosition];
+            }
+        }
+        if (event.key === 'ArrowDown') {
+            if (hystoryPosition > 0) {
+                hystoryPosition--;
+                if (hystoryPosition === 0) {
+                    inputElement.value = '';
+                } else {
+                    inputElement.value = bashHistory[bashHistory.length - hystoryPosition];;
+                }
+            }
+        }
+        if (event.key === 'Tab') {
+            event.preventDefault();
+
+            if (first) {
+                tabMachPosition = 0;
+                tabMachCommandPosition = 0;
+                first = false;
+
+                input = inputElement.value;
+                command = input.split(' ')[0];
+                commandList = commands.map(function (command) {
+                    return command.name;
+                });
+                matchingCommands = commandList.filter(function (commandName) {
+                    return commandName.startsWith(command);
+                });
+            }
+            if (firstFile) {
+                fileListing = navigateToPath(currentDir);
+                fileNames = Object.keys(fileListing);
+                matchingFiles = fileNames.filter(function (fileName) {
+                    return fileName.startsWith(input.split(' ')[1] || '');
+                });
+            }
+
+            if (matchingCommands.length === 1) {
+                if (matchingCommands[0] == command) {
+                    const file = matchingFiles[tabMachPosition];
+                    if (file) {
+                        inputElement.value = command + ' ' + file;
+                        tabMachPosition++;
+                        if (tabMachPosition >= matchingFiles.length) {
+                            tabMachPosition = 0;
+                        }
+                    }
+                } else {
+                    inputElement.value = matchingCommands[0];
+                }
+            } else if (matchingCommands.length > 1) {
+                inputElement.value = matchingCommands[tabMachCommandPosition];
+                tabMachCommandPosition++;
+                if (tabMachCommandPosition >= matchingCommands.length) {
+                    tabMachCommandPosition = 0;
+                }
+            }
+
+        } else {
+            tabMachPosition = 0;
+            tabMachCommandPosition = 0;
+            first = true;
+        }
+
     });
 
     document.addEventListener('keydown', function (event) {
@@ -237,14 +315,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 commands.forEach(function (command) {
                     const commandOutput = document.createElement('div');
                     let descriptionPos = ' '.repeat(15 - command.name.length);
-                    if (command.description.length > 50) { 
+                    if (command.description.length > 50) {
                         command.description = command.description.substring(0, 40) + '\n' + ' '.repeat(15) + command.description.substring(40);
                     }
                     commandOutput.textContent = `${command.name}${descriptionPos}${command.description}`;
                     output.appendChild(commandOutput);
                 });
                 terminalElement.scrollTop = terminalElement.scrollHeight;
-                outputElement.appendChild(output);
+                return output;
             }
         },
         {
@@ -252,7 +330,9 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Clear the terminal',
             execute: function () {
+                const output = document.createElement('div');
                 outputElement.innerHTML = '';
+                return output;
             }
         },
         {
@@ -262,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const output = document.createElement('div');
                 output.textContent = input.substring(5);
-                outputElement.appendChild(output);
+                return output;
             }
         },
         {
@@ -272,7 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = new Date().toLocaleString();
-                outputElement.appendChild(output);
+                return output;
             }
         },
         {
@@ -280,14 +360,15 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Change the color of the terminal',
             execute: function (input) {
+                const output = document.createElement('div');
                 if (input.split(' ')[1] === 'enable') {
                     settings.colors = true;
                     prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
-                    return;
+                    return output;
                 } else if (input.split(' ')[1] === 'disable') {
                     prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
                     settings.colors = false;
-                    return;
+                    return output;
                 }
                 const colors = input.split(' ')[1]?.toUpperCase();
                 const colorMap = {
@@ -319,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     terminalElement.style.color = textColor;
                     settings.colors = false;
                 }
+                return output;
             }
         },
         {
@@ -326,21 +408,19 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Create a new file',
             execute: function (input) {
+                const output = document.createElement('div');
                 if (getPermissions(currentDir, settings.currentUser)) {
                     const fileName = input.split(' ')[1];
                     if (fileName) {
                         fileSystemFunctions.createFile(`${currentDir}/${fileName}`, fileName == "grass.txt" ? "Time to go outside :)" : "");
-                        const output = document.createElement('div');
-                        outputElement.appendChild(output);
+                        return output;
                     } else {
-                        const output = document.createElement('div');
                         output.textContent = 'touch: missing file operand';
-                        outputElement.appendChild(output);
+                        return output;
                     }
                 } else {
-                    const output = document.createElement('div');
                     output.textContent = 'bash: touch: Permission denied';
-                    outputElement.appendChild(output);
+                    return output;
                 }
             }
         },
@@ -349,15 +429,14 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Delete a file or directory',
             execute: function (input) {
+                const output = document.createElement('div');
                 const path = input.split(' ')[1];
                 try {
                     fileSystemFunctions.remove(`${currentDir}/${path}`);
-                    const output = document.createElement('div');
-                    outputElement.appendChild(output);
+                    return output;
                 } catch (error) {
-                    const output = document.createElement('div');
                     output.textContent = `rm: ${path}: ${error.message}`;
-                    outputElement.appendChild(output);
+                    return output;
                 }
             }
         },
@@ -366,13 +445,15 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Display the content of a file',
             execute: function (input) {
+                const output = document.createElement('div');
                 const fileName = input.split(' ')[1];
                 try {
                     const content = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
-                    const output = document.createElement('div');
+                    if (!content) {
+                        throw new Error('No such file or directory');
+                    }
                     if (content.startsWith('<!DOCTYPE html>')) {
                         if (settings.colors) {
-                            //parse color= and set to style="color: color"
                             output.innerHTML = content.replace(/color='(.*?)'/g, 'style="color: $1"');
 
                         } else {
@@ -382,11 +463,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         output.textContent = content;
                     }
-                    outputElement.appendChild(output);
+                    return output;
                 } catch (error) {
-                    const output = document.createElement('div');
                     output.textContent = `cat: ${fileName}: ${error.message}`;
-                    outputElement.appendChild(output);
+                    return output;
                 }
             }
         },
@@ -397,8 +477,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const output = document.createElement('div');
                 output.textContent = input.substring(5);
-                outputElement.appendChild(output);
-
+                return output;
             }
         },
         {
@@ -417,7 +496,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
 
                 });
-                outputElement.appendChild(output);
+                return output;
 
             }
         },
@@ -426,15 +505,14 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Create a new directory',
             execute: function (input) {
+                const output = document.createElement('div');
                 const directoryName = input.split(' ')[1];
                 if (directoryName) {
                     fileSystemFunctions.createDirectory(`${currentDir}/${directoryName}`);
-                    const output = document.createElement('div');
-                    outputElement.appendChild(output);
+                    return output;
                 } else {
-                    const output = document.createElement('div');
                     output.textContent = 'mkdir: missing operand';
-                    outputElement.appendChild(output);
+                    return output;
                 }
             }
         },
@@ -443,14 +521,15 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Remove an empty directory',
             execute: function (input) {
+                const output = document.createElement('div');
                 const directoryName = input.split(' ')[1];
                 if (directoryName && fileSystem[currentDir][directoryName] !== undefined && Object.keys(fileSystem[currentDir][directoryName]).length === 0) {
                     delete fileSystem[currentDir][directoryName];
                 } else {
-                    const output = document.createElement('div');
                     output.textContent = `rmdir: ${directoryName}: Directory not empty or does not exist`;
                     outputElement.appendChild(output);
                 }
+                return output;
             }
         },
         {
@@ -458,6 +537,7 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Change the current directory',
             execute: function (input) {
+                const output = document.createElement('div');
                 const directoryName = input.split(' ')[1];
                 try {
                     if (directoryName === '..') {
@@ -478,14 +558,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     }
                 } catch (error) {
-                    const output = document.createElement('div');
+
                     console.log(error)
                     output.textContent = `cd: ${directoryName}: No such file or directory`;
                     outputElement.appendChild(output);
                 }
+                return output;
             }
-
-
         },
         {
             name: 'pwd',
@@ -494,7 +573,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = currentDir;
-                outputElement.appendChild(output);
+                return output;
             }
         },
         {
@@ -504,7 +583,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = settings.currentUser;
-                outputElement.appendChild(output);
+                return output;
             }
             ,
         }, {
@@ -512,6 +591,7 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Change user',
             execute: function (input) {
+                const output = document.createElement('div');
                 const user = input.split(' ')[1];
 
                 const settingsUser = settings.users[user];
@@ -532,6 +612,7 @@ document.addEventListener('DOMContentLoaded', function () {
             root: false,
             description: 'Fetch the content from a URL, can\'t use the curl user-agent so you mostly will get html content',
             execute: function (input) {
+                const output = document.createElement('div');
                 var url = input.split(' ')[1];
                 if (!url.startsWith('http://') && !url.startsWith('https://')) {
                     url = 'https://' + url;
@@ -539,13 +620,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetch(url, { mode: 'no-cors' })
                     .then(response => response.text())
                     .then(data => {
-                        const output = document.createElement('div');
                         output.textContent = data;
-                        outputElement.appendChild(output);
+                        return output;
                     }).catch(error => {
-                        const output = document.createElement('div');
                         output.textContent = error;
-                        outputElement.appendChild(output);
+                        return output;
                     });
 
             }
@@ -564,7 +643,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     dividerBar = '-'.repeat(deviceName.length - 1);
                 }
                 output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.currentUser, dividerBar, (new Date() - startDate) / 1000 + 's');
-                outputElement.appendChild(output);
+                return output;
 
 
 
@@ -572,9 +651,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     ];
 
+
+    if (fileSystem['/']['startMessage.txt']) {
+        outputElement.appendChild(commands.find(command => command.name === 'cat').execute("cat startMessage.txt"));
+    }
+
+    if (localStorage.getItem('currentDir')) {
+        currentDir = localStorage.getItem('currentDir');
+    }
+
+
+    if (settings.colors) {
+        prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+    } else {
+        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+    }
+
     function handleCommand(input) {
         const output = document.createElement('div');
         bashHistory.push(input);
+        hystoryPosition = 0;
         if (settings.colors) {
             output.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$ ${input}`;
             prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
@@ -590,7 +686,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         if (command) {
-            command.execute(input);
+            var out = command.execute(input);
+
+            var inputParts = input.split(' ');
+            if (inputParts[inputParts.length - 2] === '>') {
+                if (inputParts[inputParts.length - 1] === "") {
+                    outputElement.appendChild(out);
+                } else {
+                    var fileName = inputParts[inputParts.length - 1];
+                    //remove the last two elements
+                    var fileContentParts = inputParts.split(" ");
+                    var fileContent = fileContentParts.slice(0, -2).join(" ");
+
+
+                    if (fileName in navigateToPath(currentDir)) {
+                        fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, fileContent);
+                    } else {
+                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`, fileContent);
+                    }
+                }
+
+            } else {
+                outputElement.appendChild(out);
+            }
         } else {
             const commandOutput = document.createElement('div');
             commandOutput.textContent = `bash: ${input}: command not found`;
