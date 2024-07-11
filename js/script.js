@@ -37,7 +37,7 @@ ${c4}.MMMMMMMMMMMMMMMMMMMMMMMMX.
     ${c6}kMMMMMMMMMMMMMMMMMMMMMMd
      ;KMMMMMMMWXXWMMMMMMMk.
        .cooc,.    .,coo:. </span>
-    `,
+    `,//For now only this two browsers
     "firefox": (c1, c2, browserName, user, dividerBar, uptime) => `
 <span style="color: ${c1}">${user}@${browserName}</span>
 <span style="color: #ffffff">${dividerBar}</span>
@@ -80,7 +80,7 @@ ${c4}.MMMMMMMMMMMMMMMMMMMMMMMMX.
 <span style="color: ${c2};">Resolution: <span style='color: #ffffff'>${window.screen.width}x${window.screen.height}</span>`,
 
 
-} //For now only this two browsers
+}
 
 const asciiColors = {
     "chrome": ["</span><span style='color: #34a853'>", "</span><span style='color: #ea4335'>", "</span><span style='color: #fbbc05'>", "</span><span style='color: #4285f4'>", "</span><span style='color: #ffffff'>"],
@@ -126,6 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
             "startMessage.txt": "Welcome to the terminal! \n\nType 'help' to see all available commands",
             home: {
                 exelvi: {
+                    ".bash_history": "",
                     desktop: {
                         "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n Pssss... Also try to type 'color enable'",
                     },
@@ -133,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
             root: {
+                ".bash_history": "",
 
             }
         }
@@ -155,9 +157,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         currentUser: "exelvi",
-        colors: false
-
-
+        colors: false,
+        lastUser: "exelvi",
     }
 
 
@@ -165,8 +166,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return true //to implement
 
     }
-
-    let bashHistory = [];
 
     let currentDir = '/';
 
@@ -178,9 +177,8 @@ document.addEventListener('DOMContentLoaded', function () {
         settings = JSON.parse(localStorage.getItem('settings'));
     }
 
-    if (localStorage.getItem('bashHistory')) {
-        bashHistory = JSON.parse(localStorage.getItem('bashHistory'));
-    }
+
+
 
     const fileSystemFunctions = {
         changeFileContent: function (path, content) {
@@ -211,6 +209,22 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 return false;
             }
+        },
+        getBashHistory: function (user) {
+            var userDir = navigateToPath(settings.users[user].home);
+            if (userDir[".bash_history"] === undefined) {
+                this.createFile(`${settings.users[user].home}/.bash_history`);
+                userDir = navigateToPath(settings.users[user].home);
+            }
+            return userDir[".bash_history"];
+        },
+        addToBashHistory: function (user, command) {
+            var userDir = navigateToPath(settings.users[user].home);
+            if (userDir[".bash_history"] === undefined) {
+                this.createFile(`${settings.users[user].home}/.bash_history`);
+                userDir = navigateToPath(settings.users[user].home);
+            }
+            userDir[".bash_history"] += command + "\n";
         }
     };
 
@@ -231,7 +245,31 @@ document.addEventListener('DOMContentLoaded', function () {
         return parts[parts.length - 1];
     }
 
-    let hystoryPosition = 0;
+    function parseCommand(command) {
+        const parts = command.split(' ');
+        const result = {};
+        let input = "";
+
+        for (let i = 0; i < parts.length; i++) {
+            if (parts[i].startsWith('-')) {
+                const arg = parts[i].substring(1);
+                const value = parts[i + 1];
+                result[arg] = value;
+                i++;
+            } else if (i === parts.length - 1) {
+                input = parts[i];
+            }
+        }
+
+        if (input) {
+            result['input'] = input;
+        }
+
+        return result;
+    }
+
+
+    let hystoryPosition = 1;
 
     let tabMachPosition = 0;
     let tabMachCommandPosition = 0;
@@ -246,16 +284,17 @@ document.addEventListener('DOMContentLoaded', function () {
         matchingCommands,
         matchingFiles
 
-let tries = 0
+    let tries = 0
 
     inputElement.addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             event.preventDefault();
             const input = inputElement.value;
-            
+
             if (mode.startsWith("supassword-")) {
                 const user = mode.split("-")[1]
                 if (settings.users[user].password == input) {
+                    settings.lastUser = settings.currentUser;
                     settings.currentUser = user;
                     prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
                     document.title = settings.currentUser + '@' + browserName;
@@ -286,13 +325,13 @@ let tries = 0
                     outputElement.appendChild(output);
                     inputElement.value = '';
                     return
-                }               
+                }
             }
-            else{
+            else {
                 handleCommand(input);
                 inputElement.value = '';
             }
-     
+
         }
 
         if (event.ctrlKey && event.key === 'c') {
@@ -312,15 +351,17 @@ let tries = 0
             }
         }
         if (event.key === 'ArrowUp') {
+            var bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
             if (hystoryPosition < bashHistory.length) {
                 hystoryPosition++;
                 inputElement.value = bashHistory[bashHistory.length - hystoryPosition];
             }
         }
         if (event.key === 'ArrowDown') {
-            if (hystoryPosition > 0) {
+            var bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
+            if (hystoryPosition > 1) {
                 hystoryPosition--;
-                if (hystoryPosition === 0) {
+                if (hystoryPosition === 1) {
                     inputElement.value = '';
                 } else {
                     inputElement.value = bashHistory[bashHistory.length - hystoryPosition];;
@@ -465,6 +506,8 @@ let tries = 0
             execute: function (input) {
                 const output = document.createElement('div');
                 if (input.split(' ')[1] === 'enable') {
+                    terminalElement.style.backgroundColor = 'black';
+                    terminalElement.style.color = 'white';
                     settings.colors = true;
                     prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                     return output;
@@ -592,10 +635,18 @@ let tries = 0
                 const output = document.createElement('div');
 
                 Object.keys(currentDirContent).forEach(function (item) {
-                    if (typeof currentDirContent[item] === 'object') {
-                        output.innerHTML += `<span style="color: #3f65bd">${item}</span> `;
+                    if (settings.colors) {
+                        if (typeof currentDirContent[item] === 'object') {
+                            output.innerHTML += `<span style="color: #3f65bd">${item}</span> `;
+                        } else {
+                            output.innerHTML += `${item} `;
+                        }
                     } else {
-                        output.innerHTML += `${item} `;
+                        if (typeof currentDirContent[item] === 'object') {
+                            output.textContent += item + ' ';
+                        } else {
+                            output.textContent += item + ' ';
+                        }
                     }
 
                 });
@@ -717,8 +768,8 @@ let tries = 0
                         mode = "supassword-" + user;
                         tries = 0
                         return false
-                     
-                    } 
+
+                    }
                 }
             }
         },
@@ -767,8 +818,21 @@ let tries = 0
             description: 'Close the terminal',
             execute: function () {
                 var output = document.createElement('div');
-                output.textContent = 'Bye!';
-                window.location.href = 'https://exelvi.github.io';
+                if (settings.currentUser !== 'root') {
+                    output.textContent = 'Bye!';
+                    window.location.href = 'https://exelvi.github.io';
+
+                } else {
+                    settings.currentUser = settings.lastUser;
+                    if (settings.colors) {
+                        prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                    } else {
+                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                    }
+                    document.title = settings.currentUser + '@' + browserName;
+
+
+                }
                 return output;
             }
         },
@@ -777,17 +841,9 @@ let tries = 0
             root: true,
             description: 'Modify a user',
             execute: function (input) {
-                const output = document.createElement('div');
-                const user = input.split(' ')[1];
-                const setting = input.split(' ')[2];
-                const value = input.split(' ')[3];
-                if (settings.users[user]) {
-                    settings.users[user][setting] = value;
-                    return output;
-                } else {
-                    output.textContent = 'usermod: user not found';
-                    return output;
-                }
+                var output = document.createElement('div');
+                input = parseCommand(input);
+                console.log(input)
             }
         }
 
@@ -804,6 +860,10 @@ let tries = 0
         currentDir = settings.users[settings.currentUser].home;
     }
 
+    if (settings.currentUser === 'root') {
+        settings.currentUser = settings.lastUser;
+
+    }
 
     if (settings.colors) {
         prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
@@ -813,9 +873,8 @@ let tries = 0
 
     function handleCommand(input) {
         const output = document.createElement('div');
-
-        bashHistory.push(input);
-        hystoryPosition = 0;
+        hystoryPosition = 1;
+        fileSystemFunctions.addToBashHistory(settings.currentUser, input);
         if (settings.colors) {
             output.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$ ${input}`;
         } else {
@@ -849,7 +908,7 @@ let tries = 0
             } else {
                 outputElement.appendChild(out);
             }
-            
+
         } else {
             const commandOutput = document.createElement('div');
             commandOutput.textContent = `bash: ${input}: command not found`;
@@ -865,7 +924,6 @@ let tries = 0
 
         terminalElement.scrollTop = terminalElement.scrollHeight;
 
-        localStorage.setItem('bashHistory', JSON.stringify(bashHistory));
         localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
         localStorage.setItem('settings', JSON.stringify(settings));
         localStorage.setItem('currentDir', currentDir);
