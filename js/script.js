@@ -136,6 +136,9 @@ document.addEventListener('DOMContentLoaded', function () {
             root: {
                 ".bash_history": "",
 
+            },
+            etc: {
+                
             }
         }
     };
@@ -144,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
         users: {
             "exelvi": {
                 "password": "password", //easy :)
+                "UID": 1000,
                 "home": "/home/exelvi",
                 "permissions": {
                     "/home/exelvi": true,
@@ -152,6 +156,7 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             "root": {
                 "password": "ifyoucanreadthisyouareahacker",
+                "UID": 0,
                 "home": "/root",
                 "permissions": true
             }
@@ -760,7 +765,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
                         document.title = settings.currentUser + '@' + browserName;
                     } else {
-                        //ask for password
                         inputElement.value = '';
                         inputElement.type = 'password';
                         inputElement.focus();
@@ -843,7 +847,45 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 var output = document.createElement('div');
                 input = parseCommand(input);
-                console.log(input)
+                
+                if (input['h'] || input['-help']) {
+                    output.textContent = `Usage: usermod [options] LOGIN
+
+Options: 
+
+  -d, --home HOME_DIR           new home directory for the user account
+  -h, --help                    display this help message and exit
+  -l, --login NEW_LOGIN         new value of the login name
+  -m, --move-home               move contents of the home directory to the
+                                new location (use only with -d)
+
+`;
+                    return output;
+                }
+
+                if (input['p'] || input['-password']) {
+                    var user = input['input'];
+                    console.log(settings.users[user])            
+                    if (settings.users[user]) {
+                        settings.users[user].password = input['p'] || input['-password'];
+                        console.log(settings.users[user])       
+                    }
+                } 
+                if (input['l'] || input['-login']) {
+                    var user = input['input'];
+                    if (settings.currentUser === user) {
+                      // usermod: user username is currently used by process 1
+                        output.textContent = `usermod: user ${user} is currently used by process 1`; //:) 
+                        return output;
+                    } else {
+                        if (settings.users[user]) {
+                            settings.users[input['l'] || input['-login']] = settings.users[user];
+                            delete settings.users[user];
+                        }
+                    }
+                }
+                return output;
+                
             }
         }
 
@@ -911,8 +953,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } else {
             const commandOutput = document.createElement('div');
-            commandOutput.textContent = `bash: ${input}: command not found`;
-            outputElement.appendChild(commandOutput);
+            if (input === '') {
+               
+            } else {
+                commandOutput.textContent = `${input}: command not found`;
+                outputElement.appendChild(commandOutput);
+            }
+        
         }
 
         if (settings.colors) {
