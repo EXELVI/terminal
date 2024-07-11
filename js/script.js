@@ -123,12 +123,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let fileSystem = {
         '/': {
-            "startMessage.txt": "Welcome to the terminal! \n\nType 'help' to see all available commands",
             home: {
                 exelvi: {
                     ".bash_history": "",
                     desktop: {
-                        "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n Pssss... Also try to type 'color enable'",
+                        "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
+                        "favotite.txt": "<!DOCTYPE html>\n<span color='#f7de1f''yellow'>Javascript</span>\n<span color='#0186d0'>VSCode</span>\n<span color = '#5865F2'>Blurple</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
+
                     },
                     documents: { "troll.txt": "cat: troll.txt: Path not found" }
                 }
@@ -138,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             },
             etc: {
-
+                "motd": "Welcome to the terminal! \n\nType 'help' to see all available commands",
             }
         }
     };
@@ -187,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    let javascriptHistory = ""
 
 
     const fileSystemFunctions = {
@@ -379,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const passwdMode = mode.split("-")[1]
                 const user = mode.split("-")[2]
 
-                if (passwdMode == "c") { //current password 
+                if (passwdMode == "c") {
                     if (settings.users.find(u => u.name === user).password == input) {
                         mode = "passwd-n-" + user
                         prompt.textContent = "Enter new password: ";
@@ -387,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return
                     } else {
                         var output = document.createElement('div');
-                        output.textContent = "Wrong password";
+                        output.textContent = "passwd: Authentication token manipulation error\npasswd: password unchanged";
                         outputElement.appendChild(output);
                         inputElement.value = '';
                         inputElement.type = 'text';
@@ -400,8 +402,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         return
 
                     }
-                } else if (passwdMode == "n") { //new password
-                    //set password temp and ask for confirmation
+                } else if (passwdMode == "n") {
                     passwordTemp = input
                     mode = "passwd-cc-" + user
                     prompt.textContent = "Confirm new password: ";
@@ -410,12 +411,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (passwordTemp == input) {
                         settings.users.find(u => u.name === user).password = input
                         mode = "normal"
-                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        if (settings.colors) {
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        } else {
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        }
                         inputElement.value = '';
+                        inputElement.type = 'text';
+                        localStorage.setItem('settings', JSON.stringify(settings));
                         return
                     } else {
                         var output = document.createElement('div');
-                        output.textContent = "Passwords do not match";
+                        output.textContent = "passwd: Authentication token manipulation error\npasswd: password unchanged";
                         outputElement.appendChild(output);
                         inputElement.value = '';
                         inputElement.type = 'text';
@@ -427,10 +434,59 @@ document.addEventListener('DOMContentLoaded', function () {
                         mode = "normal"
                         return
                     }
-                } 
-                
+                }
             }
-            else {
+            else if (mode == "javascript") {
+                if (input == ".exit") {
+                    mode = "normal"
+                    inputElement.type = 'text';
+                    if (settings.colors) {
+                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                    } else {
+                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                    }
+                    inputElement.value = '';
+                    return
+                }
+                try {
+                    var output = document.createElement('div');
+                    output.textContent += "> " + input + "\n";
+                    var result = eval(input);
+                    if (typeof result == "boolean" || typeof result == "number") {
+                        var span = document.createElement('span');
+                        span.textContent = result;
+                       if (settings.colors) span.style.color = "orange";
+                        output.appendChild(span);
+                    } else if (typeof result == "string") {
+                        var span = document.createElement('span');
+                        span.textContent = "'" +  result + "'";
+                        if (settings.colors) span.style.color = "green";
+                        output.appendChild(span);
+                    } else if (typeof result == "object") {
+                        var span = document.createElement('span');
+                        span.textContent = JSON.stringify(result);
+                        if (settings.colors) span.style.color = "blue";
+                        output.appendChild(span);
+                    } else {
+                        var span = document.createElement('span');
+                        span.textContent = result;
+                        output.appendChild(span);
+                    }
+                    outputElement.appendChild(output);
+                    terminalElement.scrollTop = terminalElement.scrollHeight;
+                    inputElement.value = '';
+                    javascriptHistory += input + "\n";
+                    hystoryPosition = 1;
+                    return
+                } catch (error) {
+                    var output = document.createElement('div');
+                    output.textContent = error;
+                    outputElement.appendChild(output);
+                    terminalElement.scrollTop = terminalElement.scrollHeight;
+                    inputElement.value = '';
+                    return
+                }
+            } else {
                 handleCommand(input);
                 inputElement.value = '';
             }
@@ -438,7 +494,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (event.ctrlKey && event.key === 'c') {
-            //if is focused on input
             if (window.getSelection().toString() == '') {
 
                 const output = document.createElement('div');
@@ -461,7 +516,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
         if (event.key === 'ArrowUp') {
-            var bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
+            let bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
+            if (mode == "javascript") {
+                bashHistory = javascriptHistory.split("\n");;
+            }
             if (hystoryPosition < bashHistory.length) {
                 hystoryPosition++;
                 inputElement.value = bashHistory[bashHistory.length - hystoryPosition];
@@ -469,67 +527,68 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (event.key === 'ArrowDown') {
             var bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
+            if (mode == "javascript") {
+                bashHistory = javascriptHistory.split("\n");;
+            }
+
+            // 0 is always ""
             if (hystoryPosition > 1) {
                 hystoryPosition--;
-                if (hystoryPosition === 1) {
-                    inputElement.value = '';
-                } else {
-                    inputElement.value = bashHistory[bashHistory.length - hystoryPosition];;
-                }
+                inputElement.value = bashHistory[bashHistory.length - hystoryPosition];
             }
         }
         if (event.key === 'Tab') {
             event.preventDefault();
-
-            if (first) {
-                tabMachPosition = 0;
-                tabMachCommandPosition = 0;
-                first = false;
-
-                input = inputElement.value;
-                command = input.split(' ')[0];
-                commandList = commands.map(function (command) {
-                    return command.name;
-                });
-                matchingCommands = commandList.filter(function (commandName) {
-                    return commandName.startsWith(command);
-                });
-            }
-            if (firstFile) {
-                fileListing = navigateToPath(currentDir);
-                fileNames = Object.keys(fileListing);
-                matchingFiles = fileNames.filter(function (fileName) {
-                    return fileName.startsWith(input.split(' ')[1] || '');
-                });
-            }
-
-            if (matchingCommands.length === 1) {
-                if (matchingCommands[0] == command) {
-                    const file = matchingFiles[tabMachPosition];
-                    if (file) {
-                        inputElement.value = command + ' ' + file;
-                        tabMachPosition++;
-                        if (tabMachPosition >= matchingFiles.length) {
-                            tabMachPosition = 0;
-                        }
-                    }
-                } else {
-                    inputElement.value = matchingCommands[0];
-                }
-            } else if (matchingCommands.length > 1) {
-                inputElement.value = matchingCommands[tabMachCommandPosition];
-                tabMachCommandPosition++;
-                if (tabMachCommandPosition >= matchingCommands.length) {
+            if (mode == "normal") {
+                if (first) {
+                    tabMachPosition = 0;
                     tabMachCommandPosition = 0;
-                }
-            }
+                    first = false;
 
-        } else {
+                    input = inputElement.value;
+                    command = input.split(' ')[0];
+                    commandList = commands.map(function (command) {
+                        return command.name;
+                    });
+                    matchingCommands = commandList.filter(function (commandName) {
+                        return commandName.startsWith(command);
+                    });
+                }
+                if (firstFile) {
+                    fileListing = navigateToPath(currentDir);
+                    fileNames = Object.keys(fileListing);
+                    matchingFiles = fileNames.filter(function (fileName) {
+                        return fileName.startsWith(input.split(' ')[1] || '');
+                    });
+                }
+
+                if (matchingCommands.length === 1) {
+                    if (matchingCommands[0] == command) {
+                        const file = matchingFiles[tabMachPosition];
+                        if (file) {
+                            inputElement.value = command + ' ' + file;
+                            tabMachPosition++;
+                            if (tabMachPosition >= matchingFiles.length) {
+                                tabMachPosition = 0;
+                            }
+                        }
+                    } else {
+                        inputElement.value = matchingCommands[0];
+                    }
+                } else if (matchingCommands.length > 1) {
+                    inputElement.value = matchingCommands[tabMachCommandPosition];
+                    tabMachCommandPosition++;
+                    if (tabMachCommandPosition >= matchingCommands.length) {
+                        tabMachCommandPosition = 0;
+                    }
+                }
+
+            } 
+        }else {
             tabMachPosition = 0;
             tabMachCommandPosition = 0;
             first = true;
         }
-
     });
 
     document.addEventListener('keydown', function (event) {
@@ -713,7 +772,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             output.innerHTML = content.replace(/color='(.*?)'/g, 'style="color: $1"');
 
                         } else {
-                            output.innerHTML = content;
+                            output.innerHTML = content.replace(/hidden/g, '');
                         }
 
                     } else {
@@ -732,7 +791,14 @@ document.addEventListener('DOMContentLoaded', function () {
             description: 'Prints text to the terminal',
             execute: function (input) {
                 const output = document.createElement('div');
-                output.textContent = input.substring(5);
+                var parts = input.split(' ');
+                // if contains > or >> remove the last two parts
+                if (parts.includes(">") || parts.includes(">>")) {
+                    parts.pop();
+                    parts.pop();
+                }
+                parts.shift();
+                output.textContent = parts.join(' ');
                 return output;
             }
         },
@@ -1035,15 +1101,28 @@ Options:
                     return output;
                 }
             }
-
-
+        },
+        {
+            name: 'javascript',
+            root: false,
+            description: 'Open a javascript console',
+            execute: function () {
+                const output = document.createElement('div');
+                output.textContent = 'Welcome to JavaScript!\nTo exit press Ctrl + C or type .exit';
+                inputElement.value = '';
+                inputElement.type = 'text';
+                mode = "javascript";
+                prompt.textContent = '> ';
+                outputElement.appendChild(output);
+                return false;
+            }
         }
 
     ];
 
 
-    if (fileSystem['/']['startMessage.txt']) {
-        outputElement.appendChild(commands.find(command => command.name === 'cat').execute("cat startMessage.txt"));
+    if (fileSystem['/']['etc']['motd']) {
+        outputElement.appendChild(commands.find(command => command.name === 'cat').execute("cat /etc/motd"));
     }
 
     if (localStorage.getItem('currentDir')) {
@@ -1053,7 +1132,7 @@ Options:
     }
 
     if (settings.currentUser === 'root') {
-        //  settings.currentUser = settings.lastUser;
+        settings.currentUser = settings.lastUser;
 
     }
 
