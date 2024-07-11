@@ -140,6 +140,15 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             etc: {
                 "motd": "Welcome to the terminal! \n\nType 'help' to see all available commands",
+                "skel": {
+                    ".bash_history": "",
+                    desktop: {
+
+                    }, 
+                    documents: {
+                        
+                    }
+                }
             }
         }
     };
@@ -173,8 +182,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function getPermissions(path, user) {
-        return true //to implement
-
+        return true
     }
 
     let currentDir = '/';
@@ -236,16 +244,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 userDir = navigateToPath(settings.users.find(u => u.name === user).home);
             }
             userDir[".bash_history"] += command + "\n";
+        },
+        copyDirectory: function (source, destination) {
+            console.log(source, destination)
+            const sourceDir = navigateToPath(source);
+            console.log(sourceDir)
+            const destinationDir = navigateToPath(destination, true);
+            console.log(destinationDir)
+            destinationDir[getFileName(destination)] = JSON.parse(JSON.stringify(sourceDir));
         }
     };
 
     function navigateToPath(path, parent = false) {
+        console.log(path)
         const parts = path.split('/').filter(part => part.length > 0);
         let current = fileSystem['/'];
         for (let i = 0; i < (parent ? parts.length - 1 : parts.length); i++) {
             current = current[parts[i]];
             if (current === undefined) {
-                throw new Error('Path not found');
+                return false
             }
         }
         return current;
@@ -455,11 +472,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (typeof result == "boolean" || typeof result == "number") {
                         var span = document.createElement('span');
                         span.textContent = result;
-                       if (settings.colors) span.style.color = "orange";
+                        if (settings.colors) span.style.color = "orange";
                         output.appendChild(span);
                     } else if (typeof result == "string") {
                         var span = document.createElement('span');
-                        span.textContent = "'" +  result + "'";
+                        span.textContent = "'" + result + "'";
                         if (settings.colors) span.style.color = "green";
                         output.appendChild(span);
                     } else if (typeof result == "object") {
@@ -486,6 +503,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     inputElement.value = '';
                     return
                 }
+            } else if (mode.startsWith("adduser-")) {
+                const mode = mode.split("-")[1] //passn = New password, passc = Confirm password
+                const user = mode.split("-")[2]
+                if (mode == "passn") {
+                    passwordTemp = input
+                    mode = "adduser-passc-" + user
+                    prompt.textContent = "Confirm new password: ";
+                    inputElement.value = '';
+                } 
+                
+                
+
             } else {
                 handleCommand(input);
                 inputElement.value = '';
@@ -583,8 +612,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-            } 
-        }else {
+            }
+        } else {
             tabMachPosition = 0;
             tabMachCommandPosition = 0;
             first = true;
@@ -1116,6 +1145,57 @@ Options:
                 outputElement.appendChild(output);
                 return false;
             }
+        },
+        {
+            name: 'adduser',
+            root: true,
+            description: 'Create a new user',
+            execute: function (input) {
+                var output = document.createElement('div');
+                //adduser LOGIN
+                var user = input.split(' ')[1];
+                if (input.includes('--help') || input.includes('-h') || user === undefined || user === "") {
+                    output.textContent = `Usage: adduser LOGIN`
+                    return output;
+                }
+
+                if (settings.users.find(u => u.name === user)) {
+                    output.textContent = `adduser: The user '${user}' already exists`;
+                    return output;
+                }
+
+                output.textContent = `Adding user '${user}' ... `
+                setTimeout(() => {
+                    output.textContent += `\nCreating home directory '/home/${user}' ... `
+                    outputElement.appendChild(output);
+                    setTimeout(() => {
+                        var home = `/home/${user}`;
+                        var path = navigateToPath("/home");
+                        var skel = navigateToPath("/etc/skel");
+                        if (!path[user]) {
+                            output.textContent += `\nCopying files from '/etc/skel' ... `
+                            outputElement.appendChild(output);
+                            fileSystemFunctions.createDirectory(home);
+                            fileSystemFunctions.copyDirectory(skel, home);
+                        } else {
+                            output.textContent += `\nThe home directory '${home}' already exists.  Not copying from '/etc/skel'.`
+                            outputElement.appendChild(output);
+                        }
+                        setTimeout(() => {
+                            inputElement.value = '';
+                            inputElement.type = 'password';
+                            inputElement.focus();
+                            prompt.textContent = 'New password: ';
+                            mode = "adduser-passn-" + user;
+                            return false
+                        }, 500);
+                    }, 500);
+                })
+            }
+
+
+
+
         }
 
     ];
