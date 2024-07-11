@@ -144,8 +144,9 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     let settings = {
-        users: {
-            "exelvi": {
+        users: [
+            {
+                "name": "exelvi",
                 "password": "password", //easy :)
                 "UID": 1000,
                 "home": "/home/exelvi",
@@ -154,13 +155,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
             },
-            "root": {
+            {
+                "name": "root",
                 "password": "ifyoucanreadthisyouareahacker",
                 "UID": 0,
                 "home": "/root",
                 "permissions": true
             }
-        },
+        ],
         currentUser: "exelvi",
         colors: false,
         lastUser: "exelvi",
@@ -216,18 +218,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         getBashHistory: function (user) {
-            var userDir = navigateToPath(settings.users[user].home);
+            var userDir = navigateToPath(settings.users.find(u => u.name === user).home);
             if (userDir[".bash_history"] === undefined) {
                 this.createFile(`${settings.users[user].home}/.bash_history`);
-                userDir = navigateToPath(settings.users[user].home);
+                userDir = navigateToPath(settings.users.find(u => u.name === user).home);
             }
             return userDir[".bash_history"];
         },
         addToBashHistory: function (user, command) {
-            var userDir = navigateToPath(settings.users[user].home);
+            var userDir = navigateToPath(settings.users.find(u => u.name === user).home);
             if (userDir[".bash_history"] === undefined) {
                 this.createFile(`${settings.users[user].home}/.bash_history`);
-                userDir = navigateToPath(settings.users[user].home);
+                userDir = navigateToPath(settings.users.find(u => u.name === user).home);
             }
             userDir[".bash_history"] += command + "\n";
         }
@@ -298,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (mode.startsWith("supassword-")) {
                 const user = mode.split("-")[1]
-                if (settings.users[user].password == input) {
+                if (settings.users.find(u => u.name === user).password == input) {
                     settings.lastUser = settings.currentUser;
                     settings.currentUser = user;
                     prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
@@ -316,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         inputElement.value = '';
                         inputElement.type = 'text';
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                         } else {
                             prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
                         }
@@ -514,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     terminalElement.style.backgroundColor = 'black';
                     terminalElement.style.color = 'white';
                     settings.colors = true;
-                    prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                    prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                     return output;
                 } else if (input.split(' ')[1] === 'disable') {
                     prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
@@ -702,7 +704,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (directoryName === '..') {
                         currentDir = currentDir.substring(0, currentDir.lastIndexOf('/')) || '/';
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                         } else {
                             prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
                         }
@@ -712,7 +714,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (typeof target === 'object') {
                             currentDir = newDir;
                             if (settings.colors) {
-                                prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                                prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                             } else {
                                 prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
                             }
@@ -757,7 +759,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const output = document.createElement('div');
                 const user = input.split(' ')[1];
 
-                const settingsUser = settings.users[user];
+                const settingsUser = settings.users.find(u => u.name === user)
 
                 if (settingsUser) {
                     if (settingsUser.password == "") {
@@ -829,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     settings.currentUser = settings.lastUser;
                     if (settings.colors) {
-                        prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                     } else {
                         prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
                     }
@@ -846,9 +848,9 @@ document.addEventListener('DOMContentLoaded', function () {
             description: 'Modify a user',
             execute: function (input) {
                 var output = document.createElement('div');
-                input = parseCommand(input);
+                inputParsed = parseCommand(input);
                 
-                if (input['h'] || input['-help']) {
+                if (input.includes('--help') || input.includes('-h')){
                     output.textContent = `Usage: usermod [options] LOGIN
 
 Options: 
@@ -856,37 +858,45 @@ Options:
   -d, --home HOME_DIR           new home directory for the user account
   -h, --help                    display this help message and exit
   -l, --login NEW_LOGIN         new value of the login name
-  -m, --move-home               move contents of the home directory to the
-                                new location (use only with -d)
 
 `;
                     return output;
                 }
 
-                if (input['p'] || input['-password']) {
-                    var user = input['input'];
-                    console.log(settings.users[user])            
-                    if (settings.users[user]) {
-                        settings.users[user].password = input['p'] || input['-password'];
-                        console.log(settings.users[user])       
-                    }
-                } 
-                if (input['l'] || input['-login']) {
-                    var user = input['input'];
-                    if (settings.currentUser === user) {
-                      // usermod: user username is currently used by process 1
-                        output.textContent = `usermod: user ${user} is currently used by process 1`; //:) 
+                if (inputParsed['l'] || inputParsed['-login']) {
+                    var user = inputParsed['input'];
+                    if (!settings.users.find(u => u.name === user)) {
+                        output.textContent = `usermod: user '${user}' does not exist`;
+                        return output;
+                    } 
+                    if (settings.currentUser === user) {                      
+                        output.textContent = `usermod: user ${user} is currently used by process 1097`;
+                        return output;
+                    } else if (settings.users.find(u => u.name == user).UID === 0) {
+                        output.textContent = `usermod: user ${user} is currently used by process 1`;
                         return output;
                     } else {
-                        if (settings.users[user]) {
-                            settings.users[input['l'] || input['-login']] = settings.users[user];
-                            delete settings.users[user];
+                        if (settings.users.find(u => u.name === user)) {
+                            settings.users[inputParsed['l'] || inputParsed['-login']] = settings.users.find(u => u.name === user)
+                            delete settings.users.find(u => u.name === user);
                         }
                     }
                 }
-                return output;
-                
+                if (inputParsed['d'] || inputParsed['-home']) {
+                    var user = inputParsed['input'];
+                    if (settings.users.find(u => u.name == user).UID === 0) {
+                        output.textContent = `usermod: user ${user} is currently used by process 1`;
+                        return output;
+                    } else if (settings.users.find(u => u.name === user)) {
+                        ssettings.users.find(u => u.name === user).home = inputParsed['d'] || inputParsed['-home'];
+                    }
+                }
+                return output;                
             }
+        },
+        {
+            name: 'passwd',
+            root: false,
         }
 
     ];
@@ -899,7 +909,7 @@ Options:
     if (localStorage.getItem('currentDir')) {
         currentDir = localStorage.getItem('currentDir');
     } else {
-        currentDir = settings.users[settings.currentUser].home;
+        currentDir = settings.users.find(u => u.name === settings.currentUser).home;
     }
 
     if (settings.currentUser === 'root') {
@@ -908,7 +918,7 @@ Options:
     }
 
     if (settings.colors) {
-        prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+        prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
     } else {
         prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
     }
@@ -963,7 +973,7 @@ Options:
         }
 
         if (settings.colors) {
-            prompt.innerHTML = `<span style="color: #34a853">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+            prompt.innerHTML = `<span style="color: ${settings.users.find(u=> u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
         }
         else {
             prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
