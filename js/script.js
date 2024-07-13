@@ -245,19 +245,20 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             userDir[".bash_history"] += command + "\n";
         },
-        copyDirectory: function (source, destination) {
-            const sourceDir = navigateToPath(source);
-            const destinationDir = navigateToPath(destination, true);
-            destinationDir[getFileName(destination)] = JSON.parse(JSON.stringify(sourceDir));
-        },
-        moveDirectory: function (source, destination) {
-            const sourceDir = navigateToPath(source);
-            const destinationDir = navigateToPath(destination, true);
-            if (!destinationDir[getFileName(destination)]) {
-                destinationDir[getFileName(destination)] = {};
+        copy: function (source, destination) {
+            const sourceObj = navigateToPath(source);
+            if (sourceObj === false) {
+                throw new Error('Source path not found');
             }
-            destinationDir[getFileName(destination)] = JSON.parse(JSON.stringify(sourceDir));
-            delete sourceDir[getFileName(source)];
+            const destinationDir = navigateToPath(destination, true);
+            if (destinationDir === false) {
+                throw new Error('Destination path not found');
+            }
+            destinationDir[getFileName(destination)] = JSON.parse(JSON.stringify(sourceObj));
+        },
+        move: function (source, destination) {
+            this.copy(source, destination);
+            this.remove(source);
         }
     };
 
@@ -667,10 +668,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 commands.forEach(function (command) {
                     const commandOutput = document.createElement('div');
                     let descriptionPos = ' '.repeat(15 - command.name.length);
-                    if (command.description.length > 50) {
-                        command.description = command.description.substring(0, 40) + '\n' + ' '.repeat(15) + command.description.substring(40);
-                    }
-                    commandOutput.textContent = `${command.name}${descriptionPos}${command.description}`;
+                    let description = command.description;
+                    if (description.length > 40) {
+                        description = description.substring(0, 40) + '\n' + ' '.repeat(15) + description.substring(40);
+                    } 
+                    commandOutput.textContent = `${command.name}${descriptionPos}${description}`;
                     output.appendChild(commandOutput);
                 });
                 terminalElement.scrollTop = terminalElement.scrollHeight;
@@ -684,16 +686,6 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const output = document.createElement('div');
                 outputElement.innerHTML = '';
-                return output;
-            }
-        },
-        {
-            name: 'echo',
-            root: false,
-            description: 'Prints text to the terminal',
-            execute: function (input) {
-                const output = document.createElement('div');
-                output.textContent = input.substring(5);
                 return output;
             }
         },
@@ -832,7 +824,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const output = document.createElement('div');
                 var parts = input.split(' ');
                 // if contains > or >> remove the last two parts
-                if (parts.includes(">") || parts.includes(">>")) {
+                if (parts[parts.length - 2] === ">") {
                     parts.pop();
                     parts.pop();
                 }
@@ -886,19 +878,37 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         {
-            name: 'rmdir',
+            name: 'mv',
             root: false,
-            description: 'Remove an empty directory',
+            description: 'Move a file or directory',
             execute: function (input) {
                 const output = document.createElement('div');
-                const directoryName = input.split(' ')[1];
-                if (directoryName && fileSystem[currentDir][directoryName] !== undefined && Object.keys(fileSystem[currentDir][directoryName]).length === 0) {
-                    delete fileSystem[currentDir][directoryName];
-                } else {
-                    output.textContent = `rmdir: ${directoryName}: Directory not empty or does not exist`;
-                    outputElement.appendChild(output);
+                const source = input.split(' ')[1];
+                const destination = input.split(' ')[2];
+                try {
+                    fileSystemFunctions.move(`${currentDir}/${source}`, `${currentDir}/${destination}`);
+                    return output;
+                } catch (error) {
+                    output.textContent = `mv: ${error.message}`;
+                    return output;
                 }
-                return output;
+            }
+        },
+        {
+            name: 'cp',
+            root: false,
+            description: 'Copy a file or directory',
+            execute: function (input) {
+                const output = document.createElement('div');
+                const source = input.split(' ')[1];
+                const destination = input.split(' ')[2];
+                try {
+                    fileSystemFunctions.copy(`${currentDir}/${source}`, `${currentDir}/${destination}`);
+                    return output;
+                } catch (error) {
+                    output.textContent = `cp: ${error.message}`;
+                    return output;
+                }
             }
         },
         {
@@ -1095,15 +1105,15 @@ Options:
                 if (inputParsed['d'] || inputParsed['-home']) {
                     var user = inputParsed['input'];
                     if (user === undefined || user === "") {
-                        user = settings.currentUser;
+                        user = settings.users.find(u => u.UID === settings.currentUser).name;
                     }
-                    if (settings.users.find(u => u.name == user).UID === 0) {
+                    if (settings.users.find(u => u.name == user)?.UID === 0) {
                         output.textContent = `usermod: user ${user} is currently used by process 1`;
                         return output;
                     } else if (settings.users.find(u => u.name === user)) {
                         settings.users.find(u => u.name === user).home = inputParsed['d'] || inputParsed['-home'];
                         if (inputParsed['m'] || inputParsed['-move-home']) {
-                            fileSystemFunctions.moveDirectory(`/home/${user}`, inputParsed['d'] || inputParsed['-home']);
+                            fileSystemFunctions.move(`/home/${user}`, inputParsed['d'] || inputParsed['-home']);
                         }
                     }
                 }
@@ -1196,7 +1206,7 @@ Options:
                             if (!fileSystem['/']['etc']['skel']) {
                                 fileSystem['/']['etc']['skel'] = {};
                             } else {
-                                fileSystemFunctions.copyDirectory("/etc/skel", home);
+                                fileSystemFunctions.copy("/etc/skel", home);
                             }
                         } else {
                             output.textContent += `\nThe home directory '${home}' already exists.  Not copying from '/etc/skel'.`
@@ -1246,7 +1256,12 @@ Options:
     function handleCommand(input, out = true) {
         const output = document.createElement('div');
         hystoryPosition = 1;
-        fileSystemFunctions.addToBashHistory(settings.currentUser, input);
+        try {
+            fileSystemFunctions.addToBashHistory(settings.currentUser, input);
+        } catch (error) {
+            console.log(error)
+        }
+        
         if (settings.colors) {
             output.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name            }@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'} ${input}`;
         } else {
