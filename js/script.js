@@ -144,9 +144,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     ".bash_history": "",
                     desktop: {
 
-                    }, 
+                    },
                     documents: {
-                        
+
                     }
                 }
             }
@@ -246,12 +246,18 @@ document.addEventListener('DOMContentLoaded', function () {
             userDir[".bash_history"] += command + "\n";
         },
         copyDirectory: function (source, destination) {
-            console.log(source, destination)
             const sourceDir = navigateToPath(source);
-            console.log(sourceDir)
             const destinationDir = navigateToPath(destination, true);
-            console.log(destinationDir)
             destinationDir[getFileName(destination)] = JSON.parse(JSON.stringify(sourceDir));
+        },
+        moveDirectory: function (source, destination) {
+            const sourceDir = navigateToPath(source);
+            const destinationDir = navigateToPath(destination, true);
+            if (!destinationDir[getFileName(destination)]) {
+                destinationDir[getFileName(destination)] = {};
+            }
+            destinationDir[getFileName(destination)] = JSON.parse(JSON.stringify(sourceDir));
+            delete sourceDir[getFileName(source)];
         }
     };
 
@@ -327,9 +333,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     settings.lastUser = settings.currentUser;
                     settings.currentUser = user;
                     if (settings.colors) {
-                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     } else {
-                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     }
                     document.title = settings.currentUser + '@' + browserName;
                     mode = "normal"
@@ -345,9 +351,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         inputElement.value = '';
                         inputElement.type = 'text';
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         } else {
-                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         }
 
                         mode = "normal"
@@ -378,9 +384,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         inputElement.value = '';
                         inputElement.type = 'text';
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         } else {
-                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         }
 
                         mode = "normal"
@@ -413,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (settings.colors) {
                             prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
                         } else {
-                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         }
                         mode = "normal"
                         return
@@ -429,9 +435,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         settings.users.find(u => u.name === user).password = input
                         mode = "normal"
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         } else {
-                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         }
                         inputElement.value = '';
                         inputElement.type = 'text';
@@ -444,9 +450,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         inputElement.value = '';
                         inputElement.type = 'text';
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         } else {
-                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         }
                         mode = "normal"
                         return
@@ -458,9 +464,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     mode = "normal"
                     inputElement.type = 'text';
                     if (settings.colors) {
-                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     } else {
-                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     }
                     inputElement.value = '';
                     return
@@ -511,9 +517,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     mode = "adduser-passc-" + user
                     prompt.textContent = "Confirm new password: ";
                     inputElement.value = '';
-                } 
-                
-                
+                }
+
+
 
             } else {
                 handleCommand(input);
@@ -533,9 +539,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 mode = "normal"
                 inputElement.type = 'text';
                 if (settings.colors) {
-                    prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                    prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                 } else {
-                    prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                    prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                 }
             } else {
                 event.preventDefault();
@@ -707,10 +713,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     terminalElement.style.backgroundColor = 'black';
                     terminalElement.style.color = 'white';
                     settings.colors = true;
-                    prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                    prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     return output;
                 } else if (input.split(' ')[1] === 'disable') {
-                    prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                    prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     settings.colors = false;
                     return output;
                 }
@@ -902,9 +908,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (directoryName === '..') {
                         currentDir = currentDir.substring(0, currentDir.lastIndexOf('/')) || '/';
                         if (settings.colors) {
-                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         } else {
-                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                         }
                     } else {
                         const newDir = `${currentDir}/${directoryName}`.replace('//', '/');
@@ -912,9 +918,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (typeof target === 'object') {
                             currentDir = newDir;
                             if (settings.colors) {
-                                prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                                prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                             } else {
-                                prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                                prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                             }
                         } else {
                             throw new Error('No such file or directory');
@@ -943,9 +949,9 @@ document.addEventListener('DOMContentLoaded', function () {
             name: 'whoami',
             root: false,
             description: 'Print the current user',
-            execute: function () {
+            execute: function (input, currentUser) {
                 const output = document.createElement('div');
-                output.textContent = settings.currentUser;
+                output.textContent = currentUser;
                 return output;
             }
             ,
@@ -1029,9 +1035,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     settings.currentUser = settings.lastUser;
                     if (settings.colors) {
-                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+                        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     } else {
-                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+                        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
                     }
                     document.title = settings.currentUser + '@' + browserName;
 
@@ -1056,6 +1062,7 @@ Options:
   -d, --home HOME_DIR           new home directory for the user account
   -h, --help                    display this help message and exit
   -l, --login NEW_LOGIN         new value of the login name
+  -m, --move-home               move contents of the home directory to the
 
 `;
                     return output;
@@ -1063,6 +1070,9 @@ Options:
 
                 if (inputParsed['l'] || inputParsed['-login']) {
                     var user = inputParsed['input'];
+                    if (user === undefined || user === "") {
+                        user = settings.currentUser;
+                    }
                     if (!settings.users.find(u => u.name === user)) {
                         output.textContent = `usermod: user '${user}' does not exist`;
                         return output;
@@ -1074,19 +1084,23 @@ Options:
                         output.textContent = `usermod: user ${user} is currently used by process 1`;
                         return output;
                     } else {
-                        if (settings.users.find(u => u.name === user)) {
-                            settings.users[inputParsed['l'] || inputParsed['-login']] = settings.users.find(u => u.name === user)
-                            delete settings.users.find(u => u.name === user);
-                        }
+                        settings.users.find(u => u.name === user).name = inputParsed['l'] || inputParsed['-login'];
+
                     }
                 }
                 if (inputParsed['d'] || inputParsed['-home']) {
                     var user = inputParsed['input'];
+                    if (user === undefined || user === "") {
+                        user = settings.currentUser;
+                    }
                     if (settings.users.find(u => u.name == user).UID === 0) {
                         output.textContent = `usermod: user ${user} is currently used by process 1`;
                         return output;
                     } else if (settings.users.find(u => u.name === user)) {
-                        ssettings.users.find(u => u.name === user).home = inputParsed['d'] || inputParsed['-home'];
+                        settings.users.find(u => u.name === user).home = inputParsed['d'] || inputParsed['-home'];
+                        if (inputParsed['m'] || inputParsed['-move-home']) {
+                            fileSystemFunctions.moveDirectory(`/home/${user}`, inputParsed['d'] || inputParsed['-home']);
+                        }
                     }
                 }
                 return output;
@@ -1103,7 +1117,7 @@ Options:
                 }
                 var user = input.split(' ')[1];
                 if (user === undefined || user === "") {
-                    user = settings.currentUser;
+                    user = currentUser;
                 }
 
                 if (settings.users.find(u => u.name === user)) {
@@ -1171,12 +1185,15 @@ Options:
                     setTimeout(() => {
                         var home = `/home/${user}`;
                         var path = navigateToPath("/home");
-                        var skel = navigateToPath("/etc/skel");
                         if (!path[user]) {
                             output.textContent += `\nCopying files from '/etc/skel' ... `
                             outputElement.appendChild(output);
                             fileSystemFunctions.createDirectory(home);
-                            fileSystemFunctions.copyDirectory(skel, home);
+                            if (!fileSystem['/']['etc']['skel']) {
+                                fileSystem['/']['etc']['skel'] = {};
+                            } else {
+                                fileSystemFunctions.copyDirectory("/etc/skel", home);
+                            }
                         } else {
                             output.textContent += `\nThe home directory '${home}' already exists.  Not copying from '/etc/skel'.`
                             outputElement.appendChild(output);
@@ -1217,9 +1234,9 @@ Options:
     }
 
     if (settings.colors) {
-        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+        prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
     } else {
-        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+        prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
     }
 
     function handleCommand(input) {
@@ -1227,9 +1244,9 @@ Options:
         hystoryPosition = 1;
         fileSystemFunctions.addToBashHistory(settings.currentUser, input);
         if (settings.colors) {
-            output.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$ ${input}`;
+            output.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'} ${input}`;
         } else {
-            output.textContent = `${settings.currentUser}@${browserName}:${currentDir}$ ${input}`;
+            output.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'} ${input}`;
         }
 
 
@@ -1293,10 +1310,10 @@ Options:
         }
 
         if (settings.colors) {
-            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>$`;
+            prompt.innerHTML = `<span style="color: ${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? "#a82403" : "#34a853"}">${settings.currentUser}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
         }
         else {
-            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}$`;
+            prompt.textContent = `${settings.currentUser}@${browserName}:${currentDir}${settings.users.find(u => u.name == settings.currentUser).UID == 0 ? '#' : '$'}`;
         }
 
         terminalElement.scrollTop = terminalElement.scrollHeight;
