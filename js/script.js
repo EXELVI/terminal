@@ -195,28 +195,88 @@ document.addEventListener('DOMContentLoaded', function () {
         settings = JSON.parse(localStorage.getItem('settings'));
     }
 
+    const terminal = document.getElementById('terminal');
+    const topBar = document.getElementById('top-bar');
 
-    const minimizeButton = document.getElementById('minimize'); //minimize button (<span>)
-    const closeButton = document.getElementById('close'); //close button (<span>)
-    const zoomButton = document.getElementById('zoom'); //maximize button (<span>)
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    topBar.addEventListener('dragstart', (e) => {
+        if (document.getElementById('terminal-body').style.width != '99%') {
+            isDragging = true;
+            offsetX = e.clientX - terminal.offsetLeft;
+            offsetY = e.clientY - terminal.offsetTop;   
+        }
+    });
+
+    document.addEventListener('dragover', (e) => {
+        if (isDragging) {
+            e.preventDefault();
+            const x = e.clientX - offsetX;
+            const y = e.clientY - offsetY;
+            terminal.style.left = `${x}px`;
+            terminal.style.top = `${y}px`;
+        }
+    });
+
+    document.addEventListener('drop', () => {
+        isDragging = false;
+    });
+
+    document.addEventListener('dragend', () => {
+        isDragging = false;
+    });
+
+    const minimizeButton = document.getElementById('minimize'); 
+    const closeButton = document.getElementById('close');
+    const zoomButton = document.getElementById('zoom'); 
 
     minimizeButton.addEventListener('click', function () {
-        document.getElementById('terminal').style.display = 'none';
+        if (document.getElementById("terminal-body").style.display != "none") {
+            document.getElementById("terminal-body").style.display = "none";
+            document.getElementById("top-bar").style.borderBottomRightRadius = "5px";
+            document.getElementById("top-bar").style.borderBottomLeftRadius = "5px";
+            document.getElementById("top-bar").style.borderTopRightRadius = "5px";
+            document.getElementById("top-bar").style.borderTopLeftRadius = "5px";
+            document.getElementById("top-bar").style.width = "200px";
+        } else {
+            document.getElementById("terminal-body").style.display = "block";
+            document.getElementById("top-bar").style.borderBottomRightRadius = "0";
+            document.getElementById("top-bar").style.borderBottomLeftRadius = "0";
+            if (document.getElementById('terminal-body').style.width == '99%') {
+                document.getElementById("top-bar").style.width = "99%";
+            } else {
+                document.getElementById("top-bar").style.width = "80%";
+            }
+
+        }
+
     });
 
     closeButton.addEventListener('click', function () {
+        document.location.href = "https://exelvi.github.io";
         document.getElementById('terminal').style.display = 'none';
     });
 
     zoomButton.addEventListener('click', function () {
+        if (document.getElementById("terminal-body").style.display == "none") {
+            document.getElementById("terminal-body").style.display = "block";
+            document.getElementById("top-bar").style.borderBottomRightRadius = "0";
+            document.getElementById("top-bar").style.borderBottomLeftRadius = "0";
+
+        }
         if (document.getElementById('terminal-body').style.width == '99%') {
             document.getElementById('terminal-body').style.width = '80%';
-            document.getElementById('terminal-body').style.height = '80%';
+            document.getElementById('terminal-body').style.height = '370px';
             document.getElementById('terminal-body').style.left = '10%';
             document.getElementById('terminal-body').style.top = '10%';
+            document.getElementById('top-bar').style.borderTopRightRadius = '5px';
+            document.getElementById('top-bar').style.borderTopLeftRadius = '5px';
             document.getElementById('top-bar').style.width = '80%';
             document.getElementById("terminal").style.maxWidth = "800px";
-    
+            topBar.draggable = true;
+            topBar.style.cursor = 'grab';
+               
         } else {
             document.getElementById('terminal-body').style.width = '99%';
             document.getElementById('terminal-body').style.height = '99%';
@@ -226,11 +286,30 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('top-bar').style.borderTopRightRadius = '0';
             document.getElementById('top-bar').style.borderTopLeftRadius = '0';
             document.getElementById("terminal").style.maxWidth = "none";
+            terminal.style.left = '0px';
+            terminal.style.top = '0px';
+            topBar.draggable = false;
+            topBar.style.cursor = 'default';
         }
     });
-            
 
+    
+    
+    const resetButton = document.getElementById('reset'); //div
+    resetButton.addEventListener('click', function () {
+        var output = document.createElement('div');
+        //red !WARNING! !WARNING!
+        output.innerHTML = "\n<span style='color: red'>!WARNING!</span>\n\nThis will reset the terminal and all the data will be lost\n\n";
+        outputElement.appendChild(output);
+       prompt.textContent = "Are you sure? (y/n)";
+        mode = "confirm-" + "resetTerminal()";
 
+    });
+
+    function resetTerminal() {
+        localStorage.clear();
+        location.reload();
+    }
 
 
     let javascriptHistory = ""
@@ -550,16 +629,46 @@ document.addEventListener('DOMContentLoaded', function () {
                     return
                 }
             } else if (mode.startsWith("adduser-")) {
-                const mode = mode.split("-")[1] //passn = New password, passc = Confirm password
+                const mod = mode.split("-")[1] //passn = New password, passc = Confirm password
                 const user = mode.split("-")[2]
-                if (mode == "passn") {
+                if (mod == "passn") {
                     passwordTemp = input
                     mode = "adduser-passc-" + user
                     prompt.textContent = "Confirm new password: ";
                     inputElement.value = '';
+                } else if (mod == "passc") {
+                    
+
+
+
+            } else if (mode.startsWith("confirm-")) {
+                const functionString = mode.split("-")[1]
+                
+                if (input == "y") {
+                    eval(functionString)
+                    if (settings.colors) {
+                        prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
+                    } else {
+                        prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                    }
+                    inputElement.value = '';
+                    mode = "normal"
+                    
+
+                } else {
+                    var output = document.createElement('div');
+                    output.textContent = "Operation canceled";
+                    outputElement.appendChild(output);
+                    mode = "normal"
+                    inputElement.value = '';
+                    inputElement.type = 'text';
+                    if (settings.colors) {
+                        prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
+                    } else {
+                        prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                    }
+
                 }
-
-
 
             } else {
                 handleCommand(input);
@@ -1117,7 +1226,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     dividerBar = '-'.repeat(deviceName.length - 1);
                 }
-                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.currentUser, dividerBar, (new Date() - startDate) / 1000 + 's');
+                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == settings.currentUser).name, dividerBar, (new Date() - startDate) / 1000 + 's');
                 return output;
             }
         },
@@ -1299,6 +1408,7 @@ Options:
                             outputElement.appendChild(output);
                         }
                         setTimeout(() => {
+                         
                             inputElement.value = '';
                             inputElement.type = 'password';
                             inputElement.focus();
@@ -1325,7 +1435,7 @@ Options:
     if (localStorage.getItem('currentDir')) {
         currentDir = localStorage.getItem('currentDir');
     } else {
-        currentDir = settings.users.find(u => u.name === settings.currentUser).home;
+        currentDir = settings.users.find(u => u.UID == settings.currentUser).home;
     }
 
     if (settings.currentUser == 0) {
