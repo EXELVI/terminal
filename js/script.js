@@ -161,7 +161,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 "UID": 1000,
                 "home": "/home/exelvi",
                 "permissions": {
-                    "/home/exelvi": true,
+                    "/home/exelvi": ["r", "w", "x"],
+                    "/" : ["r"],                    
                 }
 
             },
@@ -170,7 +171,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 "password": "ifyoucanreadthisyouareahacker",
                 "UID": 0,
                 "home": "/root",
-                "permissions": true
+                "permissions": {
+                    "/": ["r", "w", "x"]
+                }
             }
         ],
         currentUser: 1000,
@@ -630,17 +633,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } else if (mode.startsWith("adduser-")) {
                 const mod = mode.split("-")[1] //passn = New password, passc = Confirm password
-                const user = mode.split("-")[2]
+                const userUID = mode.split("-")[2]
                 if (mod == "passn") {
                     passwordTemp = input
-                    mode = "adduser-passc-" + user
+                    mode = "adduser-passc-" + userUID
                     prompt.textContent = "Confirm new password: ";
                     inputElement.value = '';
                 } else if (mod == "passc") {
-                    
+                    if (passwordTemp == input) {
+                        settings.users.find(u => u.UID == userUID).password = input
+                        mode = "normal"
+                        if (settings.colors) {
+                            prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
+                        } else {
+                            prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                        }
+                        inputElement.value = '';
+                        inputElement.type = 'text';
+                        localStorage.setItem('settings', JSON.stringify(settings));
+                        return
+                    } else {
+                        var output = document.createElement('div');
+                        output.textContent = "Sorry, passwords do not match";
+                        output.textContent += "\npasswd: Authentication token manipulation error\npasswd: password unchanged";
+                        outputElement.appendChild(output);
+                        inputElement.value = '';
+                        inputElement.type = 'text';
+                        prompt.textContent = "Try again? [y/N]";
+                        mode = "confirm-" + "adduserpass(" + userUID +")";
 
-
-
+                        return
+                    }
+                }              
             } else if (mode.startsWith("confirm-")) {
                 const functionString = mode.split("-")[1]
                 
@@ -838,6 +862,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    function adduserpass(userUID) {
+        console.log(userUID)
+        inputElement.value = '';
+        inputElement.type = 'password';
+        inputElement.focus();
+        prompt.textContent = 'New password: ';
+        mode = "adduser-passn-" + userUID;
+
+    }
 
     const commands = [
         {
@@ -1408,12 +1442,24 @@ Options:
                             outputElement.appendChild(output);
                         }
                         setTimeout(() => {
-                         
+                            var userUID = 1000 + (settings.users.length - 1);
+                            var userJson = {
+                                name: user,
+                                password: "",
+                                //UID: UID 1-500 are usually reserved for system users.UID for new users start from 1000.
+                                UID: userUID,
+                                home: home,
+                                permissions: {
+                                    "/": ["r"],
+                                    home: ["r", "w", "x"]
+                                }
+                            }
+                            settings.users.push(userJson);
                             inputElement.value = '';
                             inputElement.type = 'password';
                             inputElement.focus();
                             prompt.textContent = 'New password: ';
-                            mode = "adduser-passn-" + user;
+                            mode = "adduser-passn-" + userUID;
                             return false
                         }, 500);
                     }, 500);
