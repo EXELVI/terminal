@@ -263,7 +263,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     function navigateToPath(path, parent = false) {
-        console.log(path)
         const parts = path.split('/').filter(part => part.length > 0);
         let current = fileSystem['/'];
         for (let i = 0; i < (parent ? parts.length - 1 : parts.length); i++) {
@@ -310,6 +309,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let tabMachCommandPosition = 0;
     let first = true;
     let firstFile = true;
+
+    let inputPosition = 0;
 
     var input,
         command,
@@ -623,6 +624,40 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
+            } else if (mode == "javascript") {
+                if (first) {
+                    tabMachPosition = 0;
+                    first = false;
+
+                    input = inputElement.value;
+                    // get input current position and position on the splitted array 
+                    let cursorPosition = inputElement.selectionStart;
+                    let cursorPositionArray = input.substring(0, cursorPosition).split(' ');
+                    let cursorPositionArrayLength = cursorPositionArray.length;
+                    let cursorPositionArrayLast = cursorPositionArray[cursorPositionArrayLength - 1];
+
+                    command = cursorPositionArrayLast;
+                    inputPosition = cursorPositionArrayLength - 1;
+                    
+                     //      var globalProperties = Object.getOwnPropertyNames(window);
+
+                    commandList = Object.getOwnPropertyNames(window).map(function (command) {
+                        return command;
+                    });
+                    matchingCommands = commandList.filter(function (commandName) {
+                        return commandName.startsWith(command);
+                    });
+                }
+
+                if (matchingCommands.length > 0) {
+                    inputElement.value = input.split(' ').slice(0, inputPosition).join(' ') + ' ' + matchingCommands[tabMachPosition];
+                    tabMachPosition++;
+                    if (tabMachPosition >= matchingCommands.length) {
+                        tabMachPosition = 0;
+                    }
+                }          
+
+       
             }
         } else {
             tabMachPosition = 0;
@@ -671,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     let description = command.description;
                     if (description.length > 40) {
                         description = description.substring(0, 40) + '\n' + ' '.repeat(15) + description.substring(40);
-                    } 
+                    }
                     commandOutput.textContent = `${command.name}${descriptionPos}${description}`;
                     output.appendChild(commandOutput);
                 });
@@ -1261,15 +1296,15 @@ Options:
         } catch (error) {
             console.log(error)
         }
-        
+
         if (settings.colors) {
-            output.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name            }@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'} ${input}`;
+            output.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'} ${input}`;
         } else {
             output.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'} ${input}`;
         }
 
 
-       if (out) outputElement.appendChild(output);
+        if (out) outputElement.appendChild(output);
 
         var currentUser = settings.currentUser;
 
