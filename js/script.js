@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const outputElement = document.querySelector('.output');
     const terminalElement = document.querySelector('.terminal');
     const prompt = document.getElementById('prompt');
+    const barTitle = document.getElementById('bar-title');
 
     let startDate = new Date();
 
@@ -119,7 +120,6 @@ document.addEventListener('DOMContentLoaded', function () {
         browserName = 'browser'
     }
 
-    document.title = 'exelvi@' + browserName;
 
     let fileSystem = {
         '/': {
@@ -194,6 +194,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (localStorage.getItem('settings')) {
         settings = JSON.parse(localStorage.getItem('settings'));
     }
+
+
+    const minimizeButton = document.getElementById('minimize'); //minimize button
+    const closeButton = document.getElementById('close'); //close button
+    const zoomButton = document.getElementById('zoom'); //maximize button
+
+    minimizeButton.addEventListener('click', function () {
+        window.parent.document.getElementById('terminal').style.display = 'none';
+    });
+    
+
+
+
 
 
     let javascriptHistory = ""
@@ -339,7 +352,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
                     }
-                    document.title = settings.currentUser + '@' + browserName;
+                    document.title = settings.users.find(u => u.UID == settings.currentUser).name + '@' + browserName;
+                    barTitle.textContent = settings.users.find(u => u.UID == settings.currentUser).name + '@' + browserName;
                     mode = "normal"
                     inputElement.type = 'text';
                     inputElement.value = '';
@@ -638,8 +652,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     command = cursorPositionArrayLast;
                     inputPosition = cursorPositionArrayLength - 1;
-                    
-                     //      var globalProperties = Object.getOwnPropertyNames(window);
+
+                    //      var globalProperties = Object.getOwnPropertyNames(window);
 
                     commandList = Object.getOwnPropertyNames(window).map(function (command) {
                         return command;
@@ -655,9 +669,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (tabMachPosition >= matchingCommands.length) {
                         tabMachPosition = 0;
                     }
-                }          
+                }
 
-       
+
             }
         } else {
             tabMachPosition = 0;
@@ -1012,19 +1026,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 const output = document.createElement('div');
                 const user = input.split(' ')[1];
 
-                const settingsUser = settings.users.find(u => u.name === user)
+                var settingsUser = settings.users.find(u => u.name === user)
 
+                if (!settingsUser) {
+                    // root
+                    settingsUser = settings.users.find(u => u.UID === 0)
+                }
                 if (settingsUser) {
                     if (settingsUser.password == "") {
-                        settings.currentUser = user;
-                        prompt.textContent = settings.currentUser + '@' + browserName + ':' + currentDir + '$';
-                        document.title = settings.currentUser + '@' + browserName;
+                        settings.currentUser = settingsUser.UID;
+                        document.title = settings.users.find(u => u.UID == settings.currentUser)?.name + '@' + browserName;
+                        barTitle.textContent = settings.users.find(u => u.UID == settings.currentUser)?.name + '@' + browserName;
+                        if (settings.colors) {
+                            prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
+                        }
+                        else {
+                            prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                        }
+
+                        
                     } else {
                         inputElement.value = '';
                         inputElement.type = 'password';
                         inputElement.focus();
                         prompt.textContent = 'Password:';
-                        mode = "supassword-" + user;
+                        mode = "supassword-" + settingsUser.name;
                         tries = 0
                         return false
 
@@ -1077,7 +1103,7 @@ document.addEventListener('DOMContentLoaded', function () {
             description: 'Close the terminal',
             execute: function () {
                 var output = document.createElement('div');
-                if (settings.currentUser !== 'root') {
+                if (settings.currentUser !== 0) {
                     output.textContent = 'Bye!';
                     window.location.href = 'https://exelvi.github.io';
 
@@ -1088,7 +1114,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
                     }
-                    document.title = settings.currentUser + '@' + browserName;
+                    document.title = settings.users.find(u => u.UID == settings.currentUser).name + '@' + browserName;
+                    barTitle.textContent = settings.users.find(u => u.UID == settings.currentUser).name + '@' + browserName;
 
 
                 }
@@ -1166,7 +1193,7 @@ Options:
                 }
                 var user = input.split(' ')[1];
                 if (user === undefined || user === "") {
-                    user = currentUser;
+                    user = settings.users.find(u => u.UID === currentUser).name;
                 }
 
                 if (settings.users.find(u => u.name === user)) {
@@ -1277,7 +1304,7 @@ Options:
         currentDir = settings.users.find(u => u.name === settings.currentUser).home;
     }
 
-    if (settings.currentUser === 'root') {
+    if (settings.currentUser == 0) {
         settings.currentUser = settings.lastUser;
 
     }
