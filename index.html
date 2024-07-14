@@ -40,23 +40,30 @@
 </head>
 
 <body>
-    <div class="top-bar">
-        <div class="buttons">
-            <span id="close" class="close"></span>
-            <span id="minimize" class="minimize"></span>
-            <span id="zoom" class="zoom"></span>
+    <div class="app" id="terminal">
+        <div class="top-bar" id="top-bar">
+            <div class="buttons">
+                <span id="close" class="close"></span>
+                <span id="minimize" class="minimize"></span>
+                <span id="zoom" class="zoom"></span>
+            </div>
+            <div id="reset" class="reset">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#bb0000" class="bi bi-trash-fill" viewBox="0 0 16 16">
+                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0"/>
+                  </svg>
+            </div>
+            <div class="title" id="bar-title">exelvi@bash</div>
         </div>
-        <div class="title" id="bar-title">exelvi@bash</div>
-    </div>
-    
-    <div class="terminal">
-        <div class="output"></div>
-        <div class="input-line">
-            <span id="prompt" class="prompt">exelvi@bash:/$</span>
-            <input type="text" class="input" autocomplete="off" autocorrect="off" autocapitalize="off"
-                spellcheck="false">
+        
+        <div class="terminal" id="terminal-body">
+            <div class="output"></div>
+            <div class="input-line">
+                <span id="prompt" class="prompt">exelvi@bash:/$</span>
+                <input type="text" class="input" autocomplete="off" autocorrect="off" autocapitalize="off"
+                    spellcheck="false">
+            </div>
         </div>
-    </div>
+    </div>    
     <script src="js/script.js"></script>
 </body>
 

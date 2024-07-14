@@ -10,13 +10,24 @@ body {
     flex-direction: column;
 }
 
+
+.app {
+    width: 100%;
+    height: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+}
+
 .top-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background-color: #2d2d2d;
     width: 80%;
-    max-width: 800px;
     height: 30px;
     padding: 0 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -58,7 +69,6 @@ body {
 .terminal {
     background-color: #000000;
     width: 80%;
-    max-width: 800px;
     height: 370px;
     padding: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -86,4 +96,31 @@ body {
     color: #ffffff;
     flex-grow: 1;
     outline: none;
+}
+
+@media screen and (max-width: 600px) {
+    .app {
+        width: 100%;
+        height: 100%;
+        max-width: 100%;
+        left: 0;
+        top: 0;
+        border-radius: 0;
+    }
+
+    .top-bar {
+        width: 98%;
+    }
+
+    .terminal {
+        width: 98%;
+        height: 98%;
+    }
+
+    .input-line {
+        padding: 10px;
+    }
+
+    
+
 }

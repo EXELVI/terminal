@@ -196,15 +196,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    const minimizeButton = document.getElementById('minimize'); //minimize button
-    const closeButton = document.getElementById('close'); //close button
-    const zoomButton = document.getElementById('zoom'); //maximize button
+    const minimizeButton = document.getElementById('minimize'); //minimize button (<span>)
+    const closeButton = document.getElementById('close'); //close button (<span>)
+    const zoomButton = document.getElementById('zoom'); //maximize button (<span>)
 
     minimizeButton.addEventListener('click', function () {
-        window.parent.document.getElementById('terminal').style.display = 'none';
+        document.getElementById('terminal').style.display = 'none';
     });
-    
 
+    closeButton.addEventListener('click', function () {
+        document.getElementById('terminal').style.display = 'none';
+    });
+
+    zoomButton.addEventListener('click', function () {
+        if (document.getElementById('terminal-body').style.width == '99%') {
+            document.getElementById('terminal-body').style.width = '80%';
+            document.getElementById('terminal-body').style.height = '80%';
+            document.getElementById('terminal-body').style.left = '10%';
+            document.getElementById('terminal-body').style.top = '10%';
+            document.getElementById('top-bar').style.width = '80%';
+            document.getElementById("terminal").style.maxWidth = "800px";
+    
+        } else {
+            document.getElementById('terminal-body').style.width = '99%';
+            document.getElementById('terminal-body').style.height = '99%';
+            document.getElementById('terminal-body').style.left = '0';
+            document.getElementById('terminal-body').style.top = '0';
+            document.getElementById('top-bar').style.width = '99%';
+            document.getElementById('top-bar').style.borderTopRightRadius = '0';
+            document.getElementById('top-bar').style.borderTopLeftRadius = '0';
+            document.getElementById("terminal").style.maxWidth = "none";
+        }
+    });
+            
 
 
 
