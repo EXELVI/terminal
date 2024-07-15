@@ -450,6 +450,25 @@ document.addEventListener('DOMContentLoaded', function () {
         move: function (source, destination) {
             this.copy(source, destination);
             this.remove(source);
+        },
+        tree: function (path, indent = '') {
+            let treeOutput = '';
+            const target = navigateToPath(path);
+            
+            if (typeof target !== 'object') {
+                throw new Error('Path not found');
+            }
+    
+            const keys = Object.keys(target);
+            keys.forEach((key, index) => {
+                const isLast = index === keys.length - 1;
+                treeOutput += indent + (isLast ? '└── ' : '├── ') + key + '\n';
+                if (typeof target[key] === 'object') {
+                    treeOutput += this.tree(`${path}/${key}`, indent + (isLast ? '    ' : '│   '));
+                }
+            });
+    
+            return treeOutput;
         }
     };
 
@@ -767,8 +786,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 }
 
-            } 
-                else {
+            }
+            else {
                 handleCommand(input);
                 inputElement.value = '';
             }
@@ -1084,10 +1103,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const output = document.createElement('div');
                 const fileName = input.split(' ')[1];
                 try {
-                    const content = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
-                    if (!content) {
+                    var content = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
+                    if (!content && content !== '') {
                         throw new Error('No such file or directory');
                     }
+                    if (!content) content = ' ';
                     if (content.startsWith('<!DOCTYPE html>')) {
                         if (settings.colors) {
                             output.innerHTML = content.replace(/color='(.*?)'/g, 'style="color: $1"');
@@ -1113,7 +1133,6 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const output = document.createElement('div');
                 var parts = input.split(' ');
-                // if contains > or >> remove the last two parts
                 if (parts[parts.length - 2] === ">") {
                     parts.pop();
                     parts.pop();
@@ -1208,7 +1227,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const output = document.createElement('div');
                 const directoryName = input.split(' ')[1];
-                
+
                 try {
                     let newDir;
                     if (directoryName === '/') {
@@ -1219,10 +1238,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         newDir = directoryName;
                     } else if (directoryName === '~') {
                         newDir = settings.users.find(u => u.UID == settings.currentUser).home;
-                    }else {
+                    } else {
                         newDir = `${currentDir}/${directoryName}`.replace('//', '/');
                     }
-        
+
                     const target = navigateToPath(newDir);
                     if (typeof target === 'object') {
                         currentDir = newDir.replace(/\/$/, '') || '/';  // Remove trailing slash
@@ -1239,11 +1258,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     output.textContent = `cd: ${directoryName}: No such file or directory`;
                     outputElement.appendChild(output);
                 }
-                
+
                 return output;
             }
         },
-        
+
         {
             name: 'pwd',
             root: false,
@@ -1274,9 +1293,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 var settingsUser = settings.users.find(u => u.name === user)
 
-                if (!settingsUser) {
+
+                if (!user) {
                     // root
                     settingsUser = settings.users.find(u => u.UID === 0)
+                }
+
+
+                if (!settingsUser) {
+                    output.textContent = `su: user '${user}' does not exist`;
+
+                    return output;
                 }
                 if (settingsUser) {
                     if (settingsUser.password == "") {
@@ -1543,7 +1570,6 @@ Options:
                             var userJson = {
                                 name: user,
                                 password: "",
-                                //UID: UID 1-500 are usually reserved for system users.UID for new users start from 1000.
                                 UID: userUID,
                                 home: home,
                                 permissions: {
@@ -1580,15 +1606,15 @@ Options:
                 }
 
                 if (settings.users.find(u => u.name === user)) {
-                     user = settings.users.find(u => u.name === user);
-                     if (user.UID === 0) {
+                    user = settings.users.find(u => u.name === user);
+                    if (user.UID === 0) {
                         output.textContent = `userdel: user '${user.name}' is currently used by process 1`;
                         return output;
-                     }
-                     if (user.UID == settings.currentUser) {
+                    }
+                    if (user.UID == settings.currentUser) {
                         output.textContent = `userdel: user '${user.name}' is currently used by process 1097`;
                         return output;
-                     } 
+                    }
                     output.textContent = `Removing user '${user.name}' ... `
                     setTimeout(() => {
                         if (input.includes('--remove') || input.includes('-r')) {
@@ -1608,18 +1634,18 @@ Options:
                             outputElement.appendChild(output);
                         }
                     }, 500);
-                }              
+                }
 
             }
         },
         {
-            name: "sh", 
+            name: "sh",
             description: "Start a shell",
             root: false,
             execute: function (input) {
                 var output = document.createElement('div');
                 var file = input.split(' ')[1];
-                
+
                 if (file) {
                     var content = fileSystemFunctions.readFileContent(`${currentDir}/${file}`);
                     if (content) {
@@ -1631,8 +1657,8 @@ Options:
                         output.textContent = `sh: ${file}: No such file or directory`;
                         return output;
                     }
-                } 
-                
+                }
+
             }
         },
         {
@@ -1661,8 +1687,27 @@ Options:
                     });
                 return output;
             }
+        },
+        {
+            name: "tree",
+            description: "List the file system in a tree view",
+            root: false,
+            execute: function (input) {
+                var dir = input.split(' ')[1] || "/";
+                const output = document.createElement('div');
+                try {
+                    const treeOutput = fileSystemFunctions.tree(dir);
+                    output.innerHTML = `<pre>${dir}\n${treeOutput}</pre>`;
+                } catch (error) {
+                    output.textContent = `tree: ${dir}: No such file or directory`;
+                }
+                outputElement.appendChild(output);
+                
+                return output;
+            }
         }
 
+        
     ];
 
 
