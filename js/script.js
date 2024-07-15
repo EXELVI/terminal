@@ -128,7 +128,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     ".bash_history": "",
                     desktop: {
                         "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
-                        "favotite.txt": "<!DOCTYPE html>\n<span color='#f7de1f''yellow'>Javascript</span>\n<span color='#0186d0'>VSCode</span>\n<span color = '#5865F2'>Blurple</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
+                        "favotite.txt": "<!DOCTYPE html>\n<span color='#f7de1f'>Javascript</span>\n<span color='#0186d0'>VSCode</span>\n<span color='#5865F2'>Blurple</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
+                        "links.txt": `<!DOCTYPE html>
+
+<a target="_blank" rel="noopener noreferrer" href="https://exelvi.github.io">My website</a>
+<a target="_blank" rel="noopener noreferrer" href="https://github.com/EXELVI">My GitHub</a>
+<a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/exelviofficial/">My Instagram</a>
+
+\n`,
 
                     },
                     documents: { "troll.txt": "cat: troll.txt: Path not found" }
@@ -162,7 +169,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 "home": "/home/exelvi",
                 "permissions": {
                     "/home/exelvi": ["r", "w", "x"],
-                    "/" : ["r"],                    
+                    "/": ["r"],
                 }
 
             },
@@ -200,6 +207,57 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const terminal = document.getElementById('terminal');
     const topBar = document.getElementById('top-bar');
+    const resizeHandles = document.querySelectorAll('.resize-handle');
+
+    let isResizing = false;
+    let currentHandle = null;
+    let initialMouseX, initialMouseY, initialWidth, initialHeight;
+
+    resizeHandles.forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            currentHandle = handle;
+            initialMouseX = e.clientX;
+            initialMouseY = e.clientY;
+            initialWidth = terminal.offsetWidth;
+            initialHeight = terminal.offsetHeight;
+            document.body.style.cursor = handle.style.cursor;
+            e.preventDefault();
+        });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isResizing) {
+            const dx = e.clientX - initialMouseX;
+            const dy = e.clientY - initialMouseY;
+
+            if (currentHandle.classList.contains('top-left')) {
+                terminal.style.width = `${initialWidth - dx}px`;
+                terminal.style.height = `${initialHeight - dy}px`;
+                terminal.style.top = `${terminal.offsetTop + dy}px`;
+                terminal.style.left = `${terminal.offsetLeft + dx}px`;
+            } else if (currentHandle.classList.contains('top-right')) {
+                terminal.style.width = `${initialWidth + dx}px`;
+                terminal.style.height = `${initialHeight - dy}px`;
+                terminal.style.top = `${terminal.offsetTop + dy}px`;
+            } else if (currentHandle.classList.contains('bottom-left')) {
+                terminal.style.width = `${initialWidth - dx}px`;
+                terminal.style.height = `${initialHeight + dy}px`;
+                terminal.style.left = `${terminal.offsetLeft + dx}px`;
+            } else if (currentHandle.classList.contains('bottom-right')) {
+                terminal.style.width = `${initialWidth + dx}px`;
+                terminal.style.height = `${initialHeight + dy}px`;
+            }
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        }
+    });
+
 
     let isDragging = false;
     let offsetX, offsetY;
@@ -208,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (document.getElementById('terminal-body').style.width != '99%') {
             isDragging = true;
             offsetX = e.clientX - terminal.offsetLeft;
-            offsetY = e.clientY - terminal.offsetTop;   
+            offsetY = e.clientY - terminal.offsetTop;
         }
     });
 
@@ -230,9 +288,9 @@ document.addEventListener('DOMContentLoaded', function () {
         isDragging = false;
     });
 
-    const minimizeButton = document.getElementById('minimize'); 
+    const minimizeButton = document.getElementById('minimize');
     const closeButton = document.getElementById('close');
-    const zoomButton = document.getElementById('zoom'); 
+    const zoomButton = document.getElementById('zoom');
 
     minimizeButton.addEventListener('click', function () {
         if (document.getElementById("terminal-body").style.display != "none") {
@@ -279,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById("terminal").style.maxWidth = "800px";
             topBar.draggable = true;
             topBar.style.cursor = 'grab';
-               
+
         } else {
             document.getElementById('terminal-body').style.width = '99%';
             document.getElementById('terminal-body').style.height = '99%';
@@ -296,22 +354,36 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    
-    
+
+    var confirms = 0;
+
     const resetButton = document.getElementById('reset'); //div
     resetButton.addEventListener('click', function () {
         var output = document.createElement('div');
-        //red !WARNING! !WARNING!
-        output.innerHTML = "\n<span style='color: red'>!WARNING!</span>\n\nThis will reset the terminal and all the data will be lost\n\n";
+        confirms = 0;
+        output.innerHTML = "\n<span style='color: red'>!WARNING!</span>\n\nThis will reset the terminal <strong>(NOT clear)</strong> and all the data will be lost\n\n";
         outputElement.appendChild(output);
-       prompt.textContent = "Are you sure? (y/n)";
+        prompt.textContent = "Are you sure? (y/n)";
         mode = "confirm-" + "resetTerminal()";
+        inputElement.value = '';
 
     });
 
+
+
     function resetTerminal() {
-        localStorage.clear();
-        location.reload();
+        if (confirms == 1) {
+            localStorage.clear();
+            location.reload();
+        } else {
+            confirms++;
+            var output = document.createElement('div');
+            output.innerHTML = "\n<span style='color: red'>!LAST WARNING!</span>\n\nThis will reset the terminal <strong>(NOT clear)</strong> and all the data will be lost\n\n";
+            outputElement.appendChild(output);
+            prompt.textContent = "Are you sure? (y/n)";
+            mode = "confirm-" + "resetTerminal()";
+            inputElement.value = '';
+        }
     }
 
 
@@ -660,16 +732,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         inputElement.value = '';
                         inputElement.type = 'text';
                         prompt.textContent = "Try again? [y/N]";
-                        mode = "confirm-" + "adduserpass(" + userUID +")";
+                        mode = "confirm-" + "adduserpass(" + userUID + ")";
 
                         return
                     }
-                }              
+                }
             } else if (mode.startsWith("confirm-")) {
                 const functionString = mode.split("-")[1]
-                
+
                 if (input == "y") {
-                    eval(functionString)
+
                     if (settings.colors) {
                         prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
                     } else {
@@ -677,7 +749,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                     inputElement.value = '';
                     mode = "normal"
-                    
+                    eval(functionString)
+
 
                 } else {
                     var output = document.createElement('div');
@@ -694,7 +767,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 }
 
-            } else {
+            } 
+                else {
                 handleCommand(input);
                 inputElement.value = '';
             }
@@ -881,7 +955,7 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function () {
                 const output = document.createElement('div');
                 output.textContent = 'Available commands:';
-                commands.forEach(function (command) {
+                commands.sort((a, b) => a.name.localeCompare(b.name)).forEach(function (command) {
                     const commandOutput = document.createElement('div');
                     let descriptionPos = ' '.repeat(15 - command.name.length);
                     let description = command.description;
@@ -1134,37 +1208,42 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const output = document.createElement('div');
                 const directoryName = input.split(' ')[1];
+                
                 try {
-                    if (directoryName === '..') {
-                        currentDir = currentDir.substring(0, currentDir.lastIndexOf('/')) || '/';
+                    let newDir;
+                    if (directoryName === '/') {
+                        newDir = '/';
+                    } else if (directoryName === '..' || directoryName === '../') {
+                        newDir = currentDir.substring(0, currentDir.lastIndexOf('/')) || '/';
+                    } else if (directoryName.startsWith('/')) {
+                        newDir = directoryName;
+                    } else if (directoryName === '~') {
+                        newDir = settings.users.find(u => u.UID == settings.currentUser).home;
+                    }else {
+                        newDir = `${currentDir}/${directoryName}`.replace('//', '/');
+                    }
+        
+                    const target = navigateToPath(newDir);
+                    if (typeof target === 'object') {
+                        currentDir = newDir.replace(/\/$/, '') || '/';  // Remove trailing slash
                         if (settings.colors) {
                             prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
                         } else {
                             prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
                         }
                     } else {
-                        const newDir = `${currentDir}/${directoryName}`.replace('//', '/');
-                        const target = navigateToPath(newDir);
-                        if (typeof target === 'object') {
-                            currentDir = newDir;
-                            if (settings.colors) {
-                                prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
-                            } else {
-                                prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
-                            }
-                        } else {
-                            throw new Error('No such file or directory');
-                        }
+                        throw new Error('No such file or directory');
                     }
                 } catch (error) {
-
-                    console.log(error)
+                    console.log(error);
                     output.textContent = `cd: ${directoryName}: No such file or directory`;
                     outputElement.appendChild(output);
                 }
+                
                 return output;
             }
         },
+        
         {
             name: 'pwd',
             root: false,
@@ -1181,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', function () {
             description: 'Print the current user',
             execute: function (input, currentUser) {
                 const output = document.createElement('div');
-                output.textContent = currentUser;
+                output.textContent = settings.users.find(x => x.UID == settings.currentUser).name;
                 return output;
             }
             ,
@@ -1211,7 +1290,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
                         }
 
-                        
+                        localStorage.setItem('settings', JSON.stringify(settings));
+
+
+
                     } else {
                         inputElement.value = '';
                         inputElement.type = 'password';
@@ -1232,18 +1314,27 @@ document.addEventListener('DOMContentLoaded', function () {
             execute: function (input) {
                 const output = document.createElement('div');
                 var url = input.split(' ')[1];
-                if (!url.startsWith('http://') && !url.startsWith('https://')) {
-                    url = 'https://' + url;
+                if (!url) {
+                    output.textContent = 'curl: missing URL';
+                    return output;
                 }
-                fetch(url, { mode: 'no-cors' })
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'http://' + url;
+                }
+
+                fetch(url, {
+                    headers: {
+                        "User-Agent": "curl/7.68.0"
+                    }
+                })
                     .then(response => response.text())
                     .then(data => {
                         output.textContent = data;
-                        return output;
-                    }).catch(error => {
+                    })
+                    .catch(error => {
                         output.textContent = error;
-                        return output;
                     });
+                return output;
 
             }
         },
@@ -1364,7 +1455,7 @@ Options:
                 }
 
                 if (settings.users.find(u => u.name === user)) {
-                    if (settings.users.find(u => u.name !== currentUser)?.UID == 0) {
+                    if (currentUser !== 0) {
                         inputElement.value = '';
                         inputElement.type = 'password';
                         inputElement.focus();
@@ -1392,15 +1483,21 @@ Options:
             name: 'javascript',
             root: false,
             description: 'Open a javascript console',
-            execute: function () {
+            execute: function (input) {
                 const output = document.createElement('div');
-                output.textContent = 'Welcome to JavaScript!\nTo exit press Ctrl + C or type .exit';
-                inputElement.value = '';
-                inputElement.type = 'text';
-                mode = "javascript";
-                prompt.textContent = '> ';
-                outputElement.appendChild(output);
-                return false;
+                var commands = input.split('javascript ')[1];
+                if (commands) {
+                    eval(commands);
+                    return false
+                } else {
+                    output.textContent = 'Welcome to JavaScript!\nTo exit press Ctrl + C or type .exit';
+                    inputElement.value = '';
+                    inputElement.type = 'text';
+                    mode = "javascript";
+                    prompt.textContent = '> ';
+                    outputElement.appendChild(output);
+                    return false;
+                }
             }
         },
         {
@@ -1465,10 +1562,105 @@ Options:
                     }, 500);
                 })
             }
+        },
+        {
+            name: 'userdel',
+            root: true,
+            description: 'Delete a user',
+            execute: function (input) {
+                var output = document.createElement('div');
+                var user = input.split(' ')[1];
+                if (input.includes('--help') || input.includes('-h') || user === undefined || user === "") {
+                    output.textContent = `Usage: userdel LOGIN
 
+Options:
+  -h, --help                    display this help message and exit
+  -r, --remove                  remove home directory`
+                    return output;
+                }
 
+                if (settings.users.find(u => u.name === user)) {
+                     user = settings.users.find(u => u.name === user);
+                     if (user.UID === 0) {
+                        output.textContent = `userdel: user '${user.name}' is currently used by process 1`;
+                        return output;
+                     }
+                     if (user.UID == settings.currentUser) {
+                        output.textContent = `userdel: user '${user.name}' is currently used by process 1097`;
+                        return output;
+                     } 
+                    output.textContent = `Removing user '${user.name}' ... `
+                    setTimeout(() => {
+                        if (input.includes('--remove') || input.includes('-r')) {
+                            output.textContent += `\nRemoving home directory '${user.home}' ... `
+                            outputElement.appendChild(output);
+                            setTimeout(() => {
+                                fileSystemFunctions.remove(user.home);
+                                setTimeout(() => {
+                                    settings.users = settings.users.filter(u => u.name !== user.name);
+                                    output.textContent += `\nDone.`
+                                    outputElement.appendChild(output);
+                                }, 500);
+                            }, 500);
+                        } else {
+                            settings.users = settings.users.filter(u => u.name !== user.name);
+                            output.textContent += `\nDone.`
+                            outputElement.appendChild(output);
+                        }
+                    }, 500);
+                }              
 
-
+            }
+        },
+        {
+            name: "sh", 
+            description: "Start a shell",
+            root: false,
+            execute: function (input) {
+                var output = document.createElement('div');
+                var file = input.split(' ')[1];
+                
+                if (file) {
+                    var content = fileSystemFunctions.readFileContent(`${currentDir}/${file}`);
+                    if (content) {
+                        var lines = content.split('\n');
+                        lines.forEach(function (line) {
+                            handleCommand(line, false);
+                        });
+                    } else {
+                        output.textContent = `sh: ${file}: No such file or directory`;
+                        return output;
+                    }
+                } 
+                
+            }
+        },
+        {
+            name: 'wget',
+            root: false,
+            description: 'Download a file',
+            execute: function (input) {
+                var output = document.createElement('div');
+                var url = input.split(' ')[1];
+                if (!url) {
+                    output.textContent = 'wget: missing URL';
+                    return output;
+                }
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'http://' + url;
+                }
+                fetch(url)
+                    .then(response => response.text())
+                    .then(data => {
+                        var fileName = url.split('/').pop();
+                        fileSystemFunctions.createFile(`${currentDir}/${fileName}`, data);
+                        output.textContent = `Saved '${fileName}'`;
+                    })
+                    .catch(error => {
+                        output.textContent = error;
+                    });
+                return output;
+            }
         }
 
     ];
@@ -1495,6 +1687,9 @@ Options:
         prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
     }
 
+    document.title = settings.users.find(u => u.UID == settings.currentUser).name + '@' + browserName;
+    barTitle.textContent = settings.users.find(u => u.UID == settings.currentUser).name + '@' + browserName;
+
     function handleCommand(input, out = true) {
         const output = document.createElement('div');
         hystoryPosition = 1;
@@ -1520,9 +1715,10 @@ Options:
             //remove sudo from the input
             if (sudoLogin || settings.users.find(u => u.UID === currentUser).UID === 0) {
                 input = input.substring(5);
-                currentUser = settings.users.find(u => u.UID === 0).name;
+                currentUser = 0;
             } else {
                 input = input.substring(5);
+                tries = 0;
                 inputElement.value = '';
                 inputElement.type = 'password';
                 inputElement.focus();
