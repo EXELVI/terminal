@@ -11,6 +11,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 - File system navigation: Users can navigate through directories, list files, and perform basic file operations.
 - Command history: Users can access previously executed commands using the up and down arrow keys.
 - Resizable terminal, maximizable, and minimizable.
+- It has a screenshot button that allows you to take a screenshot of the terminal.
 
 ## Usage
 
@@ -45,6 +46,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 | `passwd` | Change user password | `passwd (username)` | Leaving out the username will change the current user's password. |
 | `pwd` | Print current directory path | `pwd` | |
 | `rm` | Delete a file or directory | `rm [file]` | |
+| `screenshot` | Take a screenshot of the terminal | `screenshot` | |
 | `sh` | Start a shell | `sh [file]` | |
 | `su` | Change user | `su (username)` | Leaving out the username will switch to the root user. |
 | `touch` | Create a new file | `touch [filename]` | There may be an easteregg :) |

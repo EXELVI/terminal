@@ -93,11 +93,12 @@ const asciiColors = {
 }
 
 var mode = "normal"
-
+let realPrompt = prompt
 document.addEventListener('DOMContentLoaded', function () {
     const inputElement = document.querySelector('.input');
     const outputElement = document.querySelector('.output');
     const terminalElement = document.querySelector('.terminal');
+
     const prompt = document.getElementById('prompt');
     const barTitle = document.getElementById('bar-title');
 
@@ -121,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    let fileSystem = {
+    let fileSystem = { 
         '/': {
             home: {
                 exelvi: {
@@ -129,16 +130,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     desktop: {
                         "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
                         "favotite.txt": "<!DOCTYPE html>\n<span color='#f7de1f'>Javascript</span>\n<span color='#0186d0'>VSCode</span>\n<span color='#5865F2'>Blurple</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
-                        "links.txt": `<!DOCTYPE html>
+                        "links.txt": `<!DOCTYPE html>   
 
 <a target="_blank" rel="noopener noreferrer" href="https://exelvi.github.io">My website</a>
 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EXELVI">My GitHub</a>
 <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/exelviofficial/">My Instagram</a>
 
-\n`,
-
+\n`, 
                     },
-                    documents: { "troll.txt": "cat: troll.txt: Path not found" }
+                    documents: { "troll.txt": "cat: troll.txt: Path not found",  "player.sh": `javascript new Audio(realPrompt("Song URL (MP3 or other file)")).play();
+echo You can't stop it :)` }
                 }
             },
             root: {
@@ -386,6 +387,29 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    const screenshotButton = document.getElementById('screenshot');
+    screenshotButton.addEventListener('click', function () {
+        var element = document.getElementById('terminal-body');
+
+        document.getElementById("terminal-body").style.borderBottomRightRadius = "0";
+        document.getElementById("terminal-body").style.borderBottomLeftRadius = "0";
+
+        html2canvas(element).then(function (canvas) {
+            var image = canvas.toDataURL('image/png');
+
+            var link = document.createElement('a');
+            link.href = image;
+            link.download = 'screenshot-' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.png';
+
+            link.click();
+
+            document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
+            document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
+        });
+
+
+    });
+
 
     let javascriptHistory = ""
 
@@ -454,11 +478,11 @@ document.addEventListener('DOMContentLoaded', function () {
         tree: function (path, indent = '') {
             let treeOutput = '';
             const target = navigateToPath(path);
-            
+
             if (typeof target !== 'object') {
                 throw new Error('Path not found');
             }
-    
+
             const keys = Object.keys(target);
             keys.forEach((key, index) => {
                 const isLast = index === keys.length - 1;
@@ -467,7 +491,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     treeOutput += this.tree(`${path}/${key}`, indent + (isLast ? '    ' : '│   '));
                 }
             });
-    
+
             return treeOutput;
         }
     };
@@ -1624,6 +1648,7 @@ Options:
                                 fileSystemFunctions.remove(user.home);
                                 setTimeout(() => {
                                     settings.users = settings.users.filter(u => u.name !== user.name);
+                                    localStorage.setItem('settings', JSON.stringify(settings));
                                     output.textContent += `\nDone.`
                                     outputElement.appendChild(output);
                                 }, 500);
@@ -1702,12 +1727,51 @@ Options:
                     output.textContent = `tree: ${dir}: No such file or directory`;
                 }
                 outputElement.appendChild(output);
-                
+
                 return output;
             }
-        }
+        },
+        {
+            name: "screenshot",
+            description: "Take a screenshot",
+            root: false,
+            execute: function () {
+                var element = document.getElementById('terminal-body');
 
-        
+                document.getElementById("terminal-body").style.borderBottomRightRadius = "0";
+                document.getElementById("terminal-body").style.borderBottomLeftRadius = "0";
+                inputElement.value = '';
+                prompt.textContent = '';
+
+                html2canvas(element).then(function (canvas) {
+                    var image = canvas.toDataURL('image/png');
+
+                    var link = document.createElement('a');
+                    link.href = image;
+                    link.download = 'screenshot-' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.png';
+
+                    link.click();
+
+                    document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
+                    document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
+                    if (settings.colors) {
+                        prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
+                    } else {
+                        prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                    }
+                });
+            }
+        },
+        {
+            name: "man",
+            description: "Display the manual of a command",
+            root: false,
+            execute: function (input) {
+                var output = document.createElement('div');
+                var command = input.split(' ')[1];
+              
+            }
+        }
     ];
 
 

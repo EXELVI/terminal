@@ -104,12 +104,19 @@ body {
     background-color: #27c93f;
 }
 
-.reset {
+.actionbuttons {
     margin-left: auto;
-    padding-right: 6px;
     margin-top: 6px;
-    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    
 }
+.action-button {
+    cursor: pointer;
+    padding-right: 6px;
+}
+
 
 .title {
     color: #bbb;
@@ -127,6 +134,31 @@ body {
     border-bottom-left-radius: 5px;
     border-bottom-right-radius: 5px;
 }
+
+::-webkit-scrollbar {
+    height: .5rem;
+    width: .5rem
+  }
+
+  ::-webkit-scrollbar:horizontal {
+    height: .5rem;
+    width: .5rem
+  }
+
+  ::-webkit-scrollbar-track {
+    background-color: hsla(0, 0%, 32%, 0.336);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsla(0, 0%, 100%, .1);
+    border-color: rgba(255, 255, 255, 1);
+    border-radius: 9999px;
+    border-width: 1px
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsla(0, 0%, 100%, .3)
+  }
 
 .output {
     white-space: pre-wrap;
