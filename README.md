@@ -10,6 +10,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 - Command execution: Users can enter commands and see the output directly in the terminal.
 - File system navigation: Users can navigate through directories, list files, and perform basic file operations.
 - Command history: Users can access previously executed commands using the up and down arrow keys.
+- Autocomplete: Users can use the tab key to autocomplete commands and file paths.
 - Resizable terminal, maximizable, and minimizable.
 - It has a screenshot button that allows you to take a screenshot of the terminal.
 
@@ -48,7 +49,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 | `rm` | Delete a file or directory | `rm [file]` | |
 | `screenshot` | Take a screenshot of the terminal | `screenshot` | |
 | `sh` | Start a shell | `sh [file]` | |
-| `stats` | Print the terminal statistics | `stats` | |
+| `stats` | Print the terminal statistics | `stats (params)` | |
 | `su` | Change user | `su (username)` | Leaving out the username will switch to the root user. |
 | `touch` | Create a new file | `touch [filename]` | There may be an easteregg :) |
 | `userdel` | Delete a user | `userdel [username]` | |

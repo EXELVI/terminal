@@ -150,6 +150,8 @@ document.addEventListener('DOMContentLoaded', function () {
             home: {
                 exelvi: {
                     ".bash_history": "",
+                    ".bashrc": "",
+                    ".bash_aliases": "",
                     desktop: {
                         "about.txt": "<!DOCTYPE html>\n<span color='blue'>Hello, I'm exelvi</span>\n<span color='red'>I'm a developer</span>\n<span color='green'>I live in Veneto, Italy</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
                         "favotite.txt": "<!DOCTYPE html>\n<span color='#f7de1f'>Javascript</span>\n<span color='#0186d0'>VSCode</span>\n<span color='#5865F2'>Blurple</span>\n\n\n<span hidden>Pssss... Also try to type 'color enable' and reopen me </span>",
@@ -174,12 +176,16 @@ javascript mode = "confirm-tempFunction()"`
             },
             root: {
                 ".bash_history": "",
+                ".bashrc": "",
+                ".bash_aliases": "",
 
             },
             etc: {
                 "motd": "Welcome to the terminal! \n\nType 'help' to see all available commands",
                 "skel": {
                     ".bash_history": "",
+                    ".bashrc": "",
+                    ".bash_aliases": "",
                     desktop: {
 
                     },
@@ -1229,27 +1235,61 @@ javascript mode = "confirm-tempFunction()"`
             name: 'ls',
             root: false,
             description: 'List files in the current directory',
-            execute: function () {
-                const currentDirContent = navigateToPath(currentDir);
+            execute: function (input) {
+             
                 const output = document.createElement('div');
+                const params = input.split(' ');
+                const currentDirContent = navigateToPath(currentDir);
 
-                Object.keys(currentDirContent).forEach(function (item) {
-                    if (settings.colors) {
-                        if (typeof currentDirContent[item] === 'object') {
-                            output.innerHTML += `<span style="color: #3f65bd">${item}</span> `;
+                // if in params there is a directory
+             
+                if (params[2]) {
+                    const target = navigateToPath(`${currentDir}/${params[2]}`);
+                    if (target) currentDirContent = target;
+                } else if (params[1]) {
+                    const target = navigateToPath(`${currentDir}/${params[1]}`);
+                    if (target) currentDirContent = target;
+                }                    
+                
+                if (params[1] === '-la') {
+                    Object.keys(currentDirContent).forEach(function (item) {
+                        //list style
+                        if (settings.colors) {
+                            if (typeof currentDirContent[item] === 'object') {
+                                output.innerHTML += `<span style="color: #3f65bd">${item}</span> \n`;
+                            } else {
+                                output.innerHTML += `${item} \n`;
+                            }
                         } else {
-                            output.innerHTML += `${item} `;
+                            if (typeof currentDirContent[item] === 'object') {
+                                output.textContent += item + ' \n';
+                            } else {
+                                output.textContent += item + ' \n';
+                            }
                         }
-                    } else {
-                        if (typeof currentDirContent[item] === 'object') {
-                            output.textContent += item + ' ';
-                        } else {
-                            output.textContent += item + ' ';
-                        }
-                    }
+                    });
+                    return output;
 
-                });
-                return output;
+                } else {
+                    Object.keys(currentDirContent).forEach(function (item) {
+                        if (settings.colors) {
+                            if (typeof currentDirContent[item] === 'object') {
+                                output.innerHTML += `<span style="color: #3f65bd">${item}</span> `;
+                            } else {
+                                output.innerHTML += `${item} `;
+                            }
+                        } else {
+                            if (typeof currentDirContent[item] === 'object') {
+                                output.textContent += item + ' ';
+                            } else {
+                                output.textContent += item + ' ';
+                            }
+                        }
+    
+                    });
+                    return output;
+                }
+           
 
             }
         },
@@ -1978,11 +2018,7 @@ Files created:        ${stats.files}
 Directories created:  ${stats.directories}
 Resets:               ${stats.resets}
 </pre>`
-
-
-
                 }
-
 
                 var startColor = randomReadableColor();
                 var endColor = randomReadableColor();
@@ -2009,15 +2045,14 @@ Resets:               ${stats.resets}
         outputElement.appendChild(commands.find(command => command.name === 'cat').execute("cat /etc/motd"));
     }
 
-    if (fileSystem['/']['etc']['profile']) {
-        var profile = fileSystemFunctions.readFileContent('/etc/profile');
-        var lines = profile.split('\n');
-
+    if (fileSystemFunctions.readFileContent(`${settings.users.find(u => u.UID == settings.currentUser).home}/.bashrc`)) {
+        var lines = fileSystemFunctions.readFileContent(`${settings.users.find(u => u.UID == settings.currentUser).home}/.bashrc`).split('\n');
         lines.forEach(function (line) {
             handleCommand(line, false);
         });
     }
 
+  
 
     if (localStorage.getItem('currentDir')) {
         currentDir = localStorage.getItem('currentDir');
@@ -2078,9 +2113,28 @@ Resets:               ${stats.resets}
             }
         }
 
-        const command = commands.find(function (command) {
+        var command = commands.find(function (command) {
             return input.split(' ')[0] === command.name;
         });
+
+        if (!command) {
+            var alias = fileSystemFunctions.readFileContent(`${settings.users.find(u => u.UID == currentUser).home}/.bash_aliases`);
+
+            if (alias) {
+                alias = alias.split('\n');
+                alias.forEach(function (line) {
+                    if (line.split('=')[0] === input.split(' ')[0]) {
+                        input = line.split('=')[1] + input.substring(input.indexOf(' '));
+                    }
+                });
+            }
+             
+            command = commands.find(function (command) {
+                return input.split(' ')[0] === command.name;
+            });       
+            
+            
+        }
 
 
         if (command) {
