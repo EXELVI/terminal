@@ -205,7 +205,7 @@ javascript mode = "confirm-tempFunction()"`
         sudo: 0, //sudo commands executed since the start
         users: 0, //users created since the start
         resets: 0, //terminal resets since the start
-        screenshots: 0, //screenshots taken since the start
+        screenshots: {}, //screenshots taken since the start
         uptime: 0, //time since the start
     }
 
@@ -428,7 +428,8 @@ javascript mode = "confirm-tempFunction()"`
 
             link.click();
 
-            stats.screenshots++;
+            var today = "" + new Date().getDay() + "/" + new Date().getMonth() + "/" + new Date().getFullYear()
+            stats.screenshots[today] = stats.screenshots[today] ? stats.screenshots[today] + 1 : 1;
 
             document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
             document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
@@ -1789,7 +1790,8 @@ Options:
 
                     link.click();
 
-                    stats.screenshots++;
+                    var today = "" + new Date().getDay() + "/" + new Date().getMonth() + "/" + new Date().getFullYear()
+                    stats.screenshots[today] = stats.screenshots[today] ? stats.screenshots[today] + 1 : 1;
 
                     document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
                     document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
@@ -1807,21 +1809,69 @@ Options:
             root: false,
             execute: function (input) {
                 var output = document.createElement('div');
+                var args = input.split(" ");
 
-                if (!input.split(" ")[1]) {
-                    var mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
-                    var totalCommands = Object.values(stats.commands).reduce((a, b) => a + b);
+                function randomReadableColor() {
+                    do {
+                        var r = Math.floor(Math.random() * 256);    
+                        var g = Math.floor(Math.random() * 256);
+                        var b = Math.floor(Math.random() * 256);
+                    } while (r + g + b < 128);
+                    return `rgb(${r}, ${g}, ${b})`;
+                }
+                function createSpan(text, color) {
+                    if (color === 'random') color = randomReadableColor(); 
+                    color = randomReadableColor(); //I changed my mind, I want random colors :D
+                    return `<span style="color: ${color};">${text}</span>`;
+                }
+
+                var mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
+                var totalCommands = Object.values(stats.commands).reduce((a, b) => a + b);
+                var totalScreenshots = Object.values(stats.screenshots).reduce((a, b) => a + b);
+                if (!args[1]) {
+             
 
                     output.innerHTML = `<pre>
-Total commands: ${totalCommands}
-Most used command: ${mostUsedCommand} (${stats.commands[mostUsedCommand]} times)
-Sudo commands: ${stats.sudo || 0}
-Screenshots: ${stats.screenshots}
-Uptime: ${(new Date() - startDate) / 1000} seconds
+Total commands: ${createSpan(totalCommands, 'blue')}
+Most used command: ${createSpan(mostUsedCommand, 'green')} (${createSpan(stats.commands[mostUsedCommand], 'red')} times)
+Sudo commands: ${createSpan(stats.sudo || 0, 'purple')}
+Screenshots: ${createSpan(totalScreenshots, 'orange')}
+Uptime: ${createSpan((stats.uptime / 1000).toFixed(2), 'teal')} seconds
 </pre>`;
                     return output;
                 }
+
+                if (args[1] === 'command') {
+                    var commandStats = Object.keys(stats.commands).map(cmd => {
+                        return `${createSpan(cmd, 'green')}: ${createSpan(stats.commands[cmd], 'red')} times`;
+                    }).join('\n');
+
+                    output.innerHTML = `<pre>
+Most used command: ${createSpan(mostUsedCommand, 'green')} (${createSpan(stats.commands[mostUsedCommand], 'red')} times)
+Total commands: ${createSpan(totalCommands, 'blue')}
+-----------------------------------------------
+Command statistics:
+${commandStats}
+</pre>`;
+                    return output;
+                }
+
+                if (args[1] === 'screenshot') {
+                    var screenshotStats = Object.keys(stats.screenshots).map(date => {
+                        return `${createSpan(date, 'green')}: ${createSpan(stats.screenshots[date], 'red')} times`;
+                    }).join('\n');
+                    
+                    output.innerHTML = `<pre>
+Screenshots: ${createSpan(totalScreenshots, 'orange')}
+-----------------------------------------------
+${screenshotStats}
+</pre>`;
+                    return output;
+                }
+
+                return output;
             }
+
         }
 
     ];
@@ -1970,4 +2020,12 @@ Uptime: ${(new Date() - startDate) / 1000} seconds
         localStorage.setItem('settings', JSON.stringify(settings));
         localStorage.setItem('currentDir', currentDir);
     }
+
+    window.addEventListener('beforeunload', function (event) {
+        stats.uptime += new Date() - startDate;
+        localStorage.setItem('stats', JSON.stringify(stats));
+
+    });
+
+
 });
