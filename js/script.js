@@ -1454,7 +1454,7 @@ javascript mode = "confirm-tempFunction()"`
             description: 'Print system information',
             execute: function (input, currentUser) {
                 const output = document.createElement('div');
-                var deviceName = currentUser+ '@' + browserName;
+                var deviceName = currentUser + '@' + browserName;
                 var dividerBar;
                 if (deviceName.length % 2 == 0) {
                     dividerBar = '-'.repeat(deviceName.length);
@@ -1597,9 +1597,34 @@ Options:
                 const output = document.createElement('div');
                 var commands = input.split('javascript ')[1];
                 if (commands) {
-                    console.log(commands);
-                    eval(commands);
-                    return false
+                    try {
+                        var result = eval(commands)
+                        if (typeof result == "boolean" || typeof result == "number") {
+                            var span = document.createElement('span');
+                            span.textContent = result;
+                            if (settings.colors) span.style.color = "orange";
+                            output.appendChild(span);
+                        } else if (typeof result == "string") {
+                            var span = document.createElement('span');
+                            span.textContent = "'" + result + "'";
+                            if (settings.colors) span.style.color = "green";
+                            output.appendChild(span);
+                        } else if (typeof result == "object") {
+                            var span = document.createElement('span');
+                            span.textContent = JSON.stringify(result);
+                            if (settings.colors) span.style.color = "blue";
+                            output.appendChild(span);
+                        } else {
+                            var span = document.createElement('span');
+                            span.textContent = result;
+                            output.appendChild(span);
+                        }
+                        return output;
+                    } catch (error) {
+                        output.textContent = error;
+                        return output;
+                    }
+           
                 } else {
                     output.textContent = 'Welcome to JavaScript!\nTo exit press Ctrl + C or type .exit';
                     inputElement.value = '';
@@ -1836,6 +1861,19 @@ Options:
                 var output = document.createElement('div');
                 var args = input.split(" ");
 
+                if (args[1] == "--help" || args[1] == "-h") {
+                    output.textContent = `Usage: stats [OPTION]
+
+Options:
+    -c, --commands            display command statistics
+    -s, --screenshots         display screenshot statistics
+    -e, --errors              display error statistics
+    -complete, -all           display all statistics
+    -console                  display errors in console (only with -errors)`;
+                    return output;
+
+                }
+
                 function randomReadableColor() {
                     do {
                         var r = Math.floor(Math.random() * 256);
@@ -1844,11 +1882,12 @@ Options:
                     } while (r + g + b < 128);
                     return { r, g, b };
                 }
-        
+
                 let mostUsedCommand,
                     totalCommands,
-                    totalScreenshots
-                    
+                    totalScreenshots,
+                    totalErrors;
+
 
                 if (stats.commands) {
                     mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
@@ -1856,12 +1895,18 @@ Options:
                 } else {
                     mostUsedCommand = 'N/A';
                     totalCommands = 0;
-                } 
-                if (stats.screenshots = !{}) {
-                    Object.values(stats.screenshots).reduce((a, b) => a + b);
+                }
+                if (stats.screenshots != {}) {
+                    totalScreenshots = Object.values(stats.screenshots).reduce((a, b) => a + b);
                 } else {
                     totalScreenshots = 0;
                 }
+                if (stats.errors != {}) {
+                    totalErrors = Object.values(stats.errors).length;
+                } else {
+                    totalErrors = 0;
+                }
+
                 output.innerHTML = `<span style="color: #ffffff">stats: ${args[1]}: invalid argument;</span>`;
                 if (!args[1]) {
                     output.innerHTML = `<pre>
@@ -1873,7 +1918,7 @@ Time spent:         ${formatMilliseconds(stats.uptime)}
 </pre>`;
                 }
 
-                if (args[1] === 'command') {
+                if (args[1] === '-c' || args[1] === '-commands') {
                     var commandStats = Object.keys(stats.commands).map(cmd => {
                         return `${cmd}:${' '.repeat(15 - cmd.length)}${stats.commands[cmd]} times`;
                     }).join('\n');
@@ -1887,7 +1932,7 @@ ${commandStats}
 </pre>`;
                 }
 
-                if (args[1] === 'screenshot') {
+                if (args[1] === '-screenshot' || args[1] === '-screenshots' || args[1] === '-s') {
                     var screenshotStats = Object.keys(stats.screenshots).map(date => {
                         return `${date}:${' '.repeat(15 - date.length)}${stats.screenshots[date]} times`;
                     }).join('\n');
@@ -1899,19 +1944,59 @@ ${screenshotStats}
 </pre>`;
                 }
 
-                var startColor = randomReadableColor(); 
+                if (args[1] === '-errors' || args[1] === '-e' || args[1] === '-error' || args[2] === '-e' || args[2] === '-errors' || args[2] === '-error') {
+                    if (args[1] === '-console' || args[2] === '-console') console.log(stats.errors);
+                    var errorStats = "";
+                    for (let i = 0; i < Object.values(stats.errors).length; i++) {
+                        errorStats += `${i}. ${Object.values(stats.errors)[i]?.message?.length > 48 ? Object.values(stats.errors)[i]?.message?.substring(0, 43) + '...' : Object.values(stats.errors)[i]?.message}\n`
+                    }
+                    output.innerHTML = `<pre>
+Errors: ${totalErrors}
+-----------------------------------------------
+${errorStats}
+</pre>`;
+                }
+
+                if (args[1] === '-complete' || args[1] === '-all') {
+
+                    var commandStats = Object.keys(stats.commands).map(cmd => {
+                        return `${cmd}:${' '.repeat(15 - cmd.length)}${stats.commands[cmd]} times`;
+                    }).join('\n');
+
+                    var screenshotStats = Object.keys(stats.screenshots).map(date => {
+                        return `${date}:${' '.repeat(15 - date.length)}${stats.screenshots[date]} times`;
+                    }).join('\n');
+
+                    output.innerHTML = `<pre>
+Total commands:       ${totalCommands}
+Most used command:    ${mostUsedCommand} (${stats.commands[mostUsedCommand]} times)
+Sudo commands:        ${stats.sudo || 0}
+Screenshots:          ${totalScreenshots}
+Time spent:           ${formatMilliseconds(stats.uptime)}
+Errors:               ${totalErrors}
+Files created:        ${stats.files}
+Directories created:  ${stats.directories}
+Resets:               ${stats.resets}
+</pre>`
+
+
+
+                }
+
+
+                var startColor = randomReadableColor();
                 var endColor = randomReadableColor();
 
                 var steps = output.textContent.split('\n').length;
-                
+
                 let fade = []
                 for (let i = 0; i < steps; i++) {
                     fade.push(`rgb(${startColor.r + i * (endColor.r - startColor.r) / steps}, ${startColor.g + i * (endColor.g - startColor.g) / steps}, ${startColor.b + i * (endColor.b - startColor.b) / steps})`);
                 }
 
-                output.innerHTML = output.innerHTML.split('\n').map((line, i) => `<span style="color: ${fade[i]}">${line}</span>`).join('<br>');                 
-                
-                
+                output.innerHTML = output.innerHTML.split('\n').map((line, i) => `<span style="color: ${fade[i]}">${line}</span>`).join('<br>');
+
+
                 return output;
             }
 
@@ -2065,12 +2150,18 @@ ${screenshotStats}
     }
 
     window.addEventListener('beforeunload', function (event) {
+        if (!stats.uptime) {
+            stats.uptime = 0;
+        }
         stats.uptime += new Date() - startDate;
         localStorage.setItem('stats', JSON.stringify(stats));
 
     });
 
     window.onerror = function (msg, url, lineNo, columnNo, error) {
+        if (!stats.errors) {
+            stats.errors = [];
+        }
         stats.errors.push({
             message: msg,
             url: url,
