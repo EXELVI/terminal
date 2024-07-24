@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
         browserName = 'browser'
     }
 
+ 
 
     let fileSystem = { 
         '/': {
@@ -139,7 +140,13 @@ document.addEventListener('DOMContentLoaded', function () {
 \n`, 
                     },
                     documents: { "troll.txt": "cat: troll.txt: Path not found",  "player.sh": `javascript new Audio(realPrompt("Song URL (MP3 or other file)")).play();
-echo You can't stop it :)` }
+echo You can't stop it :)`,
+"fontChanger.sh": `javascript tempFunction = function (path) { fileSystemFunctions.changeFileContent("/etc/profile", fileSystemFunctions.readFileContent("/etc/profile") + "\\n" + fileSystemFunctions.readFileContent('/home/exelvi/documents/fontChangerStart.sh')); } 
+echo Do you want to change the font automatically at the start?
+echo javascript document.body.style.fontFamily = "Arial, sans-serif" > fontChangerStart.sh
+javascript prompt.textContent = "(y/n)"
+javascript mode = "confirm-tempFunction()"`
+ }
                 }
             },
             root: {
@@ -156,7 +163,8 @@ echo You can't stop it :)` }
                     documents: {
 
                     }
-                }
+                },
+                "profile": ""
             }
         }
     };
@@ -189,6 +197,17 @@ echo You can't stop it :)` }
         lastUser: 1000,
     }
 
+    let stats = { //Does not reset on clear
+        commands: { }, // commands executed since the start 
+        files: 0, //files created since the start 
+        directories: 0, //directories created since the start
+        sudo: 0, //sudo commands executed since the start
+        users: 0, //users created since the start
+        resets: 0, //terminal resets since the start
+        screenshots: 0, //screenshots taken since the start
+        uptime: 0, //time since the start
+    }
+
     let sudoLogin = false; //used sudo at least once
 
 
@@ -204,6 +223,9 @@ echo You can't stop it :)` }
     }
     if (localStorage.getItem('settings')) {
         settings = JSON.parse(localStorage.getItem('settings'));
+    }
+    if (localStorage.getItem('stats')) {
+        stats = JSON.parse(localStorage.getItem('stats'));
     }
 
     const terminal = document.getElementById('terminal');
@@ -495,6 +517,10 @@ echo You can't stop it :)` }
             return treeOutput;
         }
     };
+
+    var tempFunction = {
+
+    }
 
     function navigateToPath(path, parent = false) {
         const parts = path.split('/').filter(part => part.length > 0);
@@ -1538,6 +1564,7 @@ Options:
                 const output = document.createElement('div');
                 var commands = input.split('javascript ')[1];
                 if (commands) {
+                    console.log(commands);
                     eval(commands);
                     return false
                 } else {
@@ -1763,12 +1790,12 @@ Options:
             }
         },
         {
-            name: "man",
-            description: "Display the manual of a command",
+            name: "stats",
+            description: "Print terminal statistics",
             root: false,
             execute: function (input) {
                 var output = document.createElement('div');
-                var command = input.split(' ')[1];
+                
               
             }
         }
@@ -1778,6 +1805,16 @@ Options:
     if (fileSystem['/']['etc']['motd']) {
         outputElement.appendChild(commands.find(command => command.name === 'cat').execute("cat /etc/motd"));
     }
+
+    if (fileSystem['/']['etc']['profile']) {
+        var profile = fileSystemFunctions.readFileContent('/etc/profile');
+        var lines = profile.split('\n');
+
+        lines.forEach(function (line) {
+            handleCommand(line, false);
+        });
+    }
+
 
     if (localStorage.getItem('currentDir')) {
         currentDir = localStorage.getItem('currentDir');
@@ -1857,6 +1894,24 @@ Options:
                         fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, out.textContent);
                     } else {
                         fileSystemFunctions.createFile(`${currentDir}/${fileName}`, out.textContent);
+                    }
+                    if (fileSystem['/']['proc']) {
+                        if (fileSystem['/']['proc']['sysrq-trigger']) {
+                            if (fileSystemFunctions.readFileContent('/proc/sysrq-trigger') !== '') {
+                                outputElement.innerHTML = '';
+                                prompt.textContent = '';
+                                terminalElement.style.backgroundColor = 'black'
+                                terminalElement.style.color = 'white'
+                                outputElement.style.color = 'white'
+                                inputElement.value = '';
+                                inputElement.disabled = true;
+                                fileSystem['/']['proc']['sysrq-trigger'] = '';
+                                setTimeout(function () {
+                                                               
+                                document.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+                                }, 1000);
+                            }
+                        }
                     }
                 }
 
