@@ -48,6 +48,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 | `rm` | Delete a file or directory | `rm [file]` | |
 | `screenshot` | Take a screenshot of the terminal | `screenshot` | |
 | `sh` | Start a shell | `sh [file]` | |
+| `stats` | Print the terminal statistics | `stats` | |
 | `su` | Change user | `su (username)` | Leaving out the username will switch to the root user. |
 | `touch` | Create a new file | `touch [filename]` | There may be an easteregg :) |
 | `userdel` | Delete a user | `userdel [username]` | |

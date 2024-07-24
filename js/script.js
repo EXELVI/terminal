@@ -229,6 +229,7 @@ javascript mode = "confirm-tempFunction()"`
         resets: 0, //terminal resets since the start
         screenshots: {}, //screenshots taken since the start
         uptime: 0, //time since the start
+        errors: [], //JS errors since the start
     }
 
     let sudoLogin = false; //used sudo at least once
@@ -407,7 +408,7 @@ javascript mode = "confirm-tempFunction()"`
     resetButton.addEventListener('click', function () {
         var output = document.createElement('div');
         confirms = 0;
-        output.innerHTML = "\n<span style='color: red'>!WARNING!</span>\n\nThis will reset the terminal <strong>(NOT clear)</strong> and all the data will be lost\n\n";
+        output.innerHTML = "\n<span style='color: red'>!WARNING!</span>\n\nThis will reset the terminal <strong>(NOT clear)</strong> and all the data will be lost (except the stats)\n\n";
         outputElement.appendChild(output);
         prompt.textContent = "Are you sure? (y/n)";
         mode = "confirm-" + "resetTerminal()";
@@ -426,7 +427,7 @@ javascript mode = "confirm-tempFunction()"`
         } else {
             confirms++;
             var output = document.createElement('div');
-            output.innerHTML = "\n<span style='color: red'>!LAST WARNING!</span>\n\nThis will reset the terminal <strong>(NOT clear)</strong> and all the data will be lost\n\n";
+            output.innerHTML = "\n<span style='color: red'>!LAST WARNING!</span>\n\nThis will reset the terminal <strong>(NOT clear)</strong> and all the data will be lost (except the stats)\n\n";
             outputElement.appendChild(output);
             prompt.textContent = "Are you sure? (y/n)";
             mode = "confirm-" + "resetTerminal()";
@@ -452,6 +453,7 @@ javascript mode = "confirm-tempFunction()"`
 
             var today = "" + new Date().getDay() + "/" + new Date().getMonth() + "/" + new Date().getFullYear()
             stats.screenshots[today] = stats.screenshots[today] ? stats.screenshots[today] + 1 : 1;
+            localStorage.setItem('stats', JSON.stringify(stats));
 
             document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
             document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
@@ -1360,7 +1362,7 @@ javascript mode = "confirm-tempFunction()"`
             description: 'Print the current user',
             execute: function (input, currentUser) {
                 const output = document.createElement('div');
-                output.textContent = settings.users.find(x => x.UID == settings.currentUser).name;
+                output.textContent = settings.users.find(x => x.UID == currentUser).name;
                 return output;
             }
             ,
@@ -1450,16 +1452,16 @@ javascript mode = "confirm-tempFunction()"`
             name: 'neofetch',
             root: false,
             description: 'Print system information',
-            execute: function () {
+            execute: function (input, currentUser) {
                 const output = document.createElement('div');
-                var deviceName = settings.currentUser + '@' + browserName;
+                var deviceName = currentUser+ '@' + browserName;
                 var dividerBar;
                 if (deviceName.length % 2 == 0) {
                     dividerBar = '-'.repeat(deviceName.length);
                 } else {
                     dividerBar = '-'.repeat(deviceName.length - 1);
                 }
-                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == settings.currentUser).name, dividerBar, formatMilliseconds(new Date() - startDate));
+                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == currentUser).name, dividerBar, formatMilliseconds(new Date() - startDate));
                 return output;
             }
         },
@@ -1492,7 +1494,7 @@ javascript mode = "confirm-tempFunction()"`
             name: 'usermod',
             root: true,
             description: 'Modify a user',
-            execute: function (input) {
+            execute: function (input, currentUser) {
                 var output = document.createElement('div');
                 inputParsed = parseCommand(input);
 
@@ -1513,7 +1515,7 @@ Options:
                 if (inputParsed['l'] || inputParsed['-login']) {
                     var user = inputParsed['input'];
                     if (user === undefined || user === "") {
-                        user = settings.users.find(u => u.name === settings.currentUser).name;
+                        user = settings.users.find(u => u.name === currentUser).name;
                     }
                     if (!settings.users.find(u => u.name === user)) {
                         output.textContent = `usermod: user '${user}' does not exist`;
@@ -1533,7 +1535,7 @@ Options:
                 if (inputParsed['d'] || inputParsed['-home']) {
                     var user = inputParsed['input'];
                     if (user === undefined || user === "") {
-                        user = settings.users.find(u => u.UID === settings.currentUser).name;
+                        user = settings.users.find(u => u.UID === currentUser).name;
                     }
                     if (settings.users.find(u => u.name == user)?.UID === 0) {
                         output.textContent = `usermod: user ${user} is currently used by process 1`;
@@ -1814,6 +1816,7 @@ Options:
 
                     var today = "" + new Date().getDay() + "/" + new Date().getMonth() + "/" + new Date().getFullYear()
                     stats.screenshots[today] = stats.screenshots[today] ? stats.screenshots[today] + 1 : 1;
+                    localStorage.setItem('stats', JSON.stringify(stats));
 
                     document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
                     document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
@@ -1872,7 +1875,7 @@ Time spent:         ${formatMilliseconds(stats.uptime)}
 
                 if (args[1] === 'command') {
                     var commandStats = Object.keys(stats.commands).map(cmd => {
-                        return `${cmd}: ${stats.commands[cmd]} times`;
+                        return `${cmd}:${' '.repeat(15 - cmd.length)}${stats.commands[cmd]} times`;
                     }).join('\n');
 
                     output.innerHTML = `<pre>
@@ -1886,7 +1889,7 @@ ${commandStats}
 
                 if (args[1] === 'screenshot') {
                     var screenshotStats = Object.keys(stats.screenshots).map(date => {
-                        return `${date}: ${stats.screenshots[date]} times`;
+                        return `${date}:${' '.repeat(15 - date.length)}${stats.screenshots[date]} times`;
                     }).join('\n');
 
                     output.innerHTML = `<pre>
@@ -2066,6 +2069,16 @@ ${screenshotStats}
         localStorage.setItem('stats', JSON.stringify(stats));
 
     });
+
+    window.onerror = function (msg, url, lineNo, columnNo, error) {
+        stats.errors.push({
+            message: msg,
+            url: url,
+            line: lineNo,
+            column: columnNo,
+            error: error
+        });
+    };
 
 
 });
