@@ -92,6 +92,28 @@ const asciiColors = {
 
 }
 
+function formatMilliseconds(ms) {
+    let seconds = Math.floor(ms / 1000);
+    let minutes = Math.floor(seconds / 60);
+    let hours = Math.floor(minutes / 60);
+
+    seconds %= 60;
+    minutes %= 60;
+
+    let result = [];
+    if (hours > 0) {
+        result.push(hours + " hour" + (hours > 1 ? "s" : ""));
+    }
+    if (minutes > 0) {
+        result.push(minutes + " minute" + (minutes > 1 ? "s" : ""));
+    }
+    if (seconds > 0 || result.length === 0) {
+        result.push(seconds + " second" + (seconds > 1 ? "s" : ""));
+    }
+
+    return result.join(" and ");
+}
+
 var mode = "normal"
 let realPrompt = prompt
 document.addEventListener('DOMContentLoaded', function () {
@@ -1437,7 +1459,7 @@ javascript mode = "confirm-tempFunction()"`
                 } else {
                     dividerBar = '-'.repeat(deviceName.length - 1);
                 }
-                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == settings.currentUser).name, dividerBar, (new Date() - startDate) / 1000 + 's');
+                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == settings.currentUser).name, dividerBar, formatMilliseconds(new Date() - startDate));
                 return output;
             }
         },
@@ -1813,62 +1835,80 @@ Options:
 
                 function randomReadableColor() {
                     do {
-                        var r = Math.floor(Math.random() * 256);    
+                        var r = Math.floor(Math.random() * 256);
                         var g = Math.floor(Math.random() * 256);
                         var b = Math.floor(Math.random() * 256);
                     } while (r + g + b < 128);
-                    return `rgb(${r}, ${g}, ${b})`;
+                    return { r, g, b };
                 }
-                function createSpan(text, color) {
-                    if (color === 'random') color = randomReadableColor(); 
-                    color = randomReadableColor(); //I changed my mind, I want random colors :D
-                    return `<span style="color: ${color};">${text}</span>`;
-                }
+        
+                let mostUsedCommand,
+                    totalCommands,
+                    totalScreenshots
+                    
 
-                var mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
-                var totalCommands = Object.values(stats.commands).reduce((a, b) => a + b);
-                var totalScreenshots = Object.values(stats.screenshots).reduce((a, b) => a + b);
+                if (stats.commands) {
+                    mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
+                    totalCommands = Object.values(stats.commands).reduce((a, b) => a + b);
+                } else {
+                    mostUsedCommand = 'N/A';
+                    totalCommands = 0;
+                } 
+                if (stats.screenshots = !{}) {
+                    Object.values(stats.screenshots).reduce((a, b) => a + b);
+                } else {
+                    totalScreenshots = 0;
+                }
+                output.innerHTML = `<span style="color: #ffffff">stats: ${args[1]}: invalid argument;</span>`;
                 if (!args[1]) {
-             
-
                     output.innerHTML = `<pre>
-Total commands: ${createSpan(totalCommands, 'blue')}
-Most used command: ${createSpan(mostUsedCommand, 'green')} (${createSpan(stats.commands[mostUsedCommand], 'red')} times)
-Sudo commands: ${createSpan(stats.sudo || 0, 'purple')}
-Screenshots: ${createSpan(totalScreenshots, 'orange')}
-Uptime: ${createSpan((stats.uptime / 1000).toFixed(2), 'teal')} seconds
+Total commands:     ${totalCommands}
+Most used command:  ${mostUsedCommand} (${stats.commands[mostUsedCommand]} times)
+Sudo commands:      ${stats.sudo || 0}
+Screenshots:        ${totalScreenshots}
+Time spent:         ${formatMilliseconds(stats.uptime)}
 </pre>`;
-                    return output;
                 }
 
                 if (args[1] === 'command') {
                     var commandStats = Object.keys(stats.commands).map(cmd => {
-                        return `${createSpan(cmd, 'green')}: ${createSpan(stats.commands[cmd], 'red')} times`;
+                        return `${cmd}: ${stats.commands[cmd]} times`;
                     }).join('\n');
 
                     output.innerHTML = `<pre>
-Most used command: ${createSpan(mostUsedCommand, 'green')} (${createSpan(stats.commands[mostUsedCommand], 'red')} times)
-Total commands: ${createSpan(totalCommands, 'blue')}
+Most used command: ${mostUsedCommand} (${stats.commands[mostUsedCommand]} times)
+Total commands: ${totalCommands}
 -----------------------------------------------
 Command statistics:
 ${commandStats}
 </pre>`;
-                    return output;
                 }
 
                 if (args[1] === 'screenshot') {
                     var screenshotStats = Object.keys(stats.screenshots).map(date => {
-                        return `${createSpan(date, 'green')}: ${createSpan(stats.screenshots[date], 'red')} times`;
+                        return `${date}: ${stats.screenshots[date]} times`;
                     }).join('\n');
-                    
+
                     output.innerHTML = `<pre>
-Screenshots: ${createSpan(totalScreenshots, 'orange')}
+Screenshots: ${totalScreenshots}
 -----------------------------------------------
 ${screenshotStats}
 </pre>`;
-                    return output;
                 }
 
+                var startColor = randomReadableColor(); 
+                var endColor = randomReadableColor();
+
+                var steps = output.textContent.split('\n').length;
+                
+                let fade = []
+                for (let i = 0; i < steps; i++) {
+                    fade.push(`rgb(${startColor.r + i * (endColor.r - startColor.r) / steps}, ${startColor.g + i * (endColor.g - startColor.g) / steps}, ${startColor.b + i * (endColor.b - startColor.b) / steps})`);
+                }
+
+                output.innerHTML = output.innerHTML.split('\n').map((line, i) => `<span style="color: ${fade[i]}">${line}</span>`).join('<br>');                 
+                
+                
                 return output;
             }
 
