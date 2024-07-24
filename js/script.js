@@ -92,7 +92,7 @@ const asciiColors = {
 
 }
 
-function formatMilliseconds(ms) {
+function formatMilliseconds(ms, short = false) {
     let seconds = Math.floor(ms / 1000);
     let minutes = Math.floor(seconds / 60);
     let hours = Math.floor(minutes / 60);
@@ -102,13 +102,13 @@ function formatMilliseconds(ms) {
 
     let result = [];
     if (hours > 0) {
-        result.push(hours + " hour" + (hours > 1 ? "s" : ""));
+        result.push(hours + (short ? " h ": " hour" + (hours > 1 ? "s" : "")) );
     }
     if (minutes > 0) {
-        result.push(minutes + " minute" + (minutes > 1 ? "s" : ""));
+        result.push(minutes + (short ? " m" : " minute" + (minutes > 1 ? "s" : "")) );
     }
     if (seconds > 0 || result.length === 0) {
-        result.push(seconds + " second" + (seconds > 1 ? "s" : ""));
+        result.push(seconds + (short ? "s " : " second" + (seconds > 1 ? "s" : "")));
     }
 
     return result.join(" and ");
@@ -629,8 +629,89 @@ javascript mode = "confirm-tempFunction()"`
     let posx = 0, // Cursor position
         posy = 0;
 
+    var addedNewChar = false;
+
     inputElement.addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
+        if (mode.startsWith('nano-')) {
+            const fileName = mode.split('-')[1];
+            const lines = fileSystemFunctions.readFileContent(currentDir + '/' + fileName).split('\n');
+            var line = lines[posy];
+            if (event.key === 'ArrowLeft') {
+                if (posx > 0) {
+                    posx--;
+                }
+            } else if (event.key === 'ArrowRight') {
+                if (posx < line.length) {
+                    posx++;
+                }
+            } else if (event.key === 'ArrowUp') {
+                if (posy > 0) {
+                    posy--;
+                    posx = Math.min(posx, lines[posy].length);
+                }
+            } else if (event.key === 'ArrowDown') {
+                if (posy < lines.length - 1) {
+                    posy++;
+                    posx = Math.min(posx, lines[posy].length);
+                }
+            } else if (event.key === 'Backspace') {
+                if (posx > 0) {
+                    lines[posy] = line.substring(0, posx - 1) + line.substring(posx);
+                    posx--;
+                } else if (posy > 0) {
+                    posx = lines[posy - 1].length;
+                    lines[posy - 1] += lines[posy];
+                    lines.splice(posy, 1);
+                    posy--;
+                }
+            } else if (event.key === 'Delete') {
+                if (posx < line.length) {
+                    lines[posy] = line.substring(0, posx) + line.substring(posx + 1);
+                } else if (posy < lines.length - 1) {
+                    lines[posy] += lines[posy + 1];
+                    lines.splice(posy + 1, 1);
+                }
+            } else if (event.key === 'Enter') {
+                lines.splice(posy + 1, 0, line.substring(posx));
+                lines[posy] = line.substring(0, posx);
+                posy++;
+                posx = 0;
+            } else if (event.key.length === 1) {
+                lines[posy] = line.substring(0, posx) + event.key + line.substring(posx);       
+                addedNewChar = true;         
+                posx++;
+            } else if (event.key === 'Escape') {
+                mode = 'normal';
+                inputElement.type = 'text';
+                inputElement.value = '';
+                outputElement.innerHTML = innerHtmlNano;
+                outputAfterInput.innerHTML = '';
+            }
+             line = lines[posy];
+            fileSystemFunctions.changeFileContent(currentDir + '/' + fileName, lines.join('\n'));
+             //outputElement lines before posy
+            //prompt and inputElement posy
+            // outputAfterInput lines after posy
+
+            let outputElementContent = '';
+            for (let i = 0; i < posy; i++) {
+                outputElementContent += lines[i] + '<br>';
+            }
+            outputElement.innerHTML = outputElementContent;
+            let outputAfterInputContent = '';
+            for (let i = posy + 1; i < lines.length; i++) {
+                outputAfterInputContent += lines[i] + '<br>';
+            }
+            outputAfterInput.innerHTML = outputAfterInputContent;
+            prompt.textContent = `> `;
+            inputElement.value = addedNewChar ? lines[posy].substring(0, posx - 1) + lines[posy].substring(posx) : lines[posy];
+            inputElement.setSelectionRange(posx, posx);
+            
+
+            
+            
+            
+        } else if (event.key === 'Enter' && !mode.startsWith('nano-')) {
             event.preventDefault();
             const input = inputElement.value;
 
@@ -902,6 +983,7 @@ javascript mode = "confirm-tempFunction()"`
                 terminalElement.scrollTop = terminalElement.scrollHeight;
                 inputElement.value = '';
                 mode = "normal"
+                outputAfterInput.innerHTML = '';
                 inputElement.type = 'text';
                 if (settings.colors) {
                     prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
@@ -915,7 +997,7 @@ javascript mode = "confirm-tempFunction()"`
                 inputElement.focus();
             }
         }
-        if (event.key === 'ArrowUp') {
+        if (event.key === 'ArrowUp' && !mode.startsWith('nano-')) {
             let bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
             if (mode == "javascript") {
                 bashHistory = javascriptHistory.split("\n");;
@@ -925,7 +1007,7 @@ javascript mode = "confirm-tempFunction()"`
                 inputElement.value = bashHistory[bashHistory.length - hystoryPosition];
             }
         }
-        if (event.key === 'ArrowDown') {
+        if (event.key === 'ArrowDown' && !mode.startsWith('nano-')) {
             var bashHistory = fileSystemFunctions.getBashHistory(settings.currentUser).split("\n");
             if (mode == "javascript") {
                 bashHistory = javascriptHistory.split("\n");;
@@ -937,7 +1019,7 @@ javascript mode = "confirm-tempFunction()"`
                 inputElement.value = bashHistory[bashHistory.length - hystoryPosition];
             }
         }
-        if (event.key === 'Tab') {
+        if (event.key === 'Tab' && !mode.startsWith('nano-')) {
             event.preventDefault();
             if (mode == "normal") {
                 if (first) {
@@ -983,7 +1065,7 @@ javascript mode = "confirm-tempFunction()"`
                     }
                 }
 
-            } else if (mode == "javascript") {
+            } else if (mode == "javascript" ) {
                 if (first) {
                     tabMachPosition = 0;
                     first = false;
@@ -1507,7 +1589,7 @@ javascript mode = "confirm-tempFunction()"`
                 } else {
                     dividerBar = '-'.repeat(deviceName.length - 1);
                 }
-                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == currentUser).name, dividerBar, formatMilliseconds(new Date() - startDate));
+                output.innerHTML = ascii[browserName](...asciiColors[browserName], browserName, settings.users.find(u => u.UID == currentUser).name, dividerBar, formatMilliseconds(new Date() - startDate, true));
                 return output;
             }
         },
@@ -1965,7 +2047,7 @@ Time spent:         ${formatMilliseconds(stats.uptime)}
                 }
 
                 if (args[1] === '-c' || args[1] === '-commands') {
-                    var commandStats = Object.keys(stats.commands).map(cmd => {
+                    var commandStats = Object.keys(stats.commands).sort((a,b) => stats.commands[b] - stats.commands[a]).map(cmd => {
                         return `${cmd}:${' '.repeat(15 - cmd.length)}${stats.commands[cmd]} times`;
                     }).join('\n');
 
@@ -2089,7 +2171,7 @@ Resets:               ${stats.resets}
         },
         {
             name: "nano",
-            description: "Edit a file",
+            description: "Edit a file (Bugged, really bugged :|)",
             root: false,
             execute: function (input) {
                 var output = document.createElement('div');
@@ -2098,8 +2180,16 @@ Resets:               ${stats.resets}
                     var fileContent = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
                     if (fileContent !== false) {
                         mode = "nano-" + fileName;
-                        innerHtmlNano = outputElement.innerHTML;
-                        outputElement.innerHTML = "<pre>" + fileContent + "</pre>";
+                        posx = 0;
+                        posy = 0;
+                        currentFileContent = fileSystemFunctions.readFileContent(currentDir + '/' + fileName) || '';
+                        lines = currentFileContent.split('\n');
+                        
+                        outputElement.innerHTML = lines.slice(0, posy).join('\n');
+                        outputAfterInput.innerHTML = lines.slice(posy + 1).join('\n');
+                        inputElement.value = lines[posy];
+                        inputElement.setSelectionRange(posx, posx);
+                        inputElement.focus();
                         prompt.innerHTML = ``
                     } else {
                         output.innerText = `File not found: ${fileName}`;
@@ -2286,6 +2376,10 @@ Resets:               ${stats.resets}
         }
         stats.uptime += new Date() - startDate;
         localStorage.setItem('stats', JSON.stringify(stats));
+        localStorage.setItem('fileSystem', JSON.stringify(fileSystem));
+        localStorage.setItem('settings', JSON.stringify(settings));
+        localStorage.setItem('currentDir', currentDir);
+
 
     });
 

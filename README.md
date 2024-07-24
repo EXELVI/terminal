@@ -29,6 +29,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 | Command | Description | Usage | Notes |
 | ------- | ----------- | ----- | ---- |
 | `adduser` | Create a new user | `adduser [username]` | |
+| `alias` | Create an alias for a command | `alias [name] [command]` | |
 | `cat` | Display the content of a file | `cat [filename]` | |
 | `cd` | Change the current directory | `cd [directory]` | Using `..` will move up one directory, and using `~` will move to the home directory. |
 | `clear` | Clear the terminal | `clear` | |
@@ -43,6 +44,7 @@ Originally made for portfolio purposes, this project is a simple implementation 
 | `ls` | List files in the current directory | `ls` | |
 | `mkdir` | Create a new directory | `mkdir [directory]` | |
 | `mv` | Move a file or directory | `mv [source] [destination]` | |
+| `nano` | Open a text editor | `nano [filename]` | Bugged, really bugged. :\| |
 | `neofetch` | Print system information | `neofetch` | Ascii art only with Chrome and Safari. |
 | `passwd` | Change user password | `passwd (username)` | Leaving out the username will change the current user's password. |
 | `pwd` | Print current directory path | `pwd` | |
@@ -52,6 +54,8 @@ Originally made for portfolio purposes, this project is a simple implementation 
 | `stats` | Print the terminal statistics | `stats (params)` | |
 | `su` | Change user | `su (username)` | Leaving out the username will switch to the root user. |
 | `touch` | Create a new file | `touch [filename]` | There may be an easteregg :) |
+| `tree` | Print the directory tree | `tree` | |
+| `unalias` | Remove an alias | `unalias [name]` | |
 | `userdel` | Delete a user | `userdel [username]` | |
 | `usermod` | Modify a user | `usermod [username]` | |
 | `whoami` | Print the current user | `whoami` | |
