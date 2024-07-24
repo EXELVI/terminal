@@ -121,9 +121,9 @@ document.addEventListener('DOMContentLoaded', function () {
         browserName = 'browser'
     }
 
- 
 
-    let fileSystem = { 
+
+    let fileSystem = {
         '/': {
             home: {
                 exelvi: {
@@ -137,16 +137,17 @@ document.addEventListener('DOMContentLoaded', function () {
 <a target="_blank" rel="noopener noreferrer" href="https://github.com/EXELVI">My GitHub</a>
 <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/exelviofficial/">My Instagram</a>
 
-\n`, 
+\n`,
                     },
-                    documents: { "troll.txt": "cat: troll.txt: Path not found",  "player.sh": `javascript new Audio(realPrompt("Song URL (MP3 or other file)")).play();
+                    documents: {
+                        "troll.txt": "cat: troll.txt: Path not found", "player.sh": `javascript new Audio(realPrompt("Song URL (MP3 or other file)")).play();
 echo You can't stop it :)`,
-"fontChanger.sh": `javascript tempFunction = function (path) { fileSystemFunctions.changeFileContent("/etc/profile", fileSystemFunctions.readFileContent("/etc/profile") + "\\n" + fileSystemFunctions.readFileContent('/home/exelvi/documents/fontChangerStart.sh')); } 
+                        "fontChanger.sh": `javascript tempFunction = function (path) { fileSystemFunctions.changeFileContent("/etc/profile", fileSystemFunctions.readFileContent("/etc/profile") + "\\n" + fileSystemFunctions.readFileContent('/home/exelvi/documents/fontChangerStart.sh')); } 
 echo Do you want to change the font automatically at the start?
 echo javascript document.body.style.fontFamily = "Arial, sans-serif" > fontChangerStart.sh
 javascript prompt.textContent = "(y/n)"
 javascript mode = "confirm-tempFunction()"`
- }
+                    }
                 }
             },
             root: {
@@ -198,7 +199,7 @@ javascript mode = "confirm-tempFunction()"`
     }
 
     let stats = { //Does not reset on clear
-        commands: { }, // commands executed since the start 
+        commands: {}, // commands executed since the start 
         files: 0, //files created since the start 
         directories: 0, //directories created since the start
         sudo: 0, //sudo commands executed since the start
@@ -397,7 +398,9 @@ javascript mode = "confirm-tempFunction()"`
     function resetTerminal() {
         if (confirms == 1) {
             localStorage.clear();
-            location.reload();
+            stats.resets++;
+            localStorage.setItem('stats', JSON.stringify(stats));
+            location.reload()
         } else {
             confirms++;
             var output = document.createElement('div');
@@ -424,6 +427,8 @@ javascript mode = "confirm-tempFunction()"`
             link.download = 'screenshot-' + new Date().toISOString().slice(0, 19).replace(/:/g, '-') + '.png';
 
             link.click();
+
+            stats.screenshots++;
 
             document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
             document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
@@ -453,12 +458,15 @@ javascript mode = "confirm-tempFunction()"`
         createFile: function (path, content = '') {
             const parentDir = navigateToPath(path, true);
             parentDir[getFileName(path)] = content;
+            stats.files++;
         },
         createDirectory: function (path) {
             const parentDir = navigateToPath(path, true);
             parentDir[getFileName(path)] = {};
+            stats.directories++;
         },
         readFileContent: function (path) {
+
             const file = navigateToPath(path);
             if (typeof file === 'string') {
                 return file;
@@ -1629,6 +1637,8 @@ Options:
                                 }
                             }
                             settings.users.push(userJson);
+                            stats.users++;
+                            localStorage.setItem('settings', JSON.stringify(settings));
                             inputElement.value = '';
                             inputElement.type = 'password';
                             inputElement.focus();
@@ -1779,6 +1789,8 @@ Options:
 
                     link.click();
 
+                    stats.screenshots++;
+
                     document.getElementById("terminal-body").style.borderBottomRightRadius = "5px";
                     document.getElementById("terminal-body").style.borderBottomLeftRadius = "5px";
                     if (settings.colors) {
@@ -1795,10 +1807,23 @@ Options:
             root: false,
             execute: function (input) {
                 var output = document.createElement('div');
-                
-              
+
+                if (!input.split(" ")[1]) {
+                    var mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
+                    var totalCommands = Object.values(stats.commands).reduce((a, b) => a + b);
+
+                    output.innerHTML = `<pre>
+Total commands: ${totalCommands}
+Most used command: ${mostUsedCommand} (${stats.commands[mostUsedCommand]} times)
+Sudo commands: ${stats.sudo || 0}
+Screenshots: ${stats.screenshots}
+Uptime: ${(new Date() - startDate) / 1000} seconds
+</pre>`;
+                    return output;
+                }
             }
         }
+
     ];
 
 
@@ -1862,6 +1887,7 @@ Options:
             if (sudoLogin || settings.users.find(u => u.UID === currentUser).UID === 0) {
                 input = input.substring(5);
                 currentUser = 0;
+                stats.sudo = stats.sudo ? stats.sudo + 1 : 1;
             } else {
                 input = input.substring(5);
                 tries = 0;
@@ -1880,6 +1906,7 @@ Options:
 
 
         if (command) {
+            stats.commands[command.name] = stats.commands[command.name] ? stats.commands[command.name] + 1 : 1;
             var out = command.execute(input, currentUser);
             if (!out) return
 
@@ -1889,7 +1916,7 @@ Options:
                     outputElement.appendChild(out);
                 } else {
                     var fileName = inputParts[inputParts.length - 1];
-                    //remove the last two elements
+
                     if (fileName in navigateToPath(currentDir)) {
                         fileSystemFunctions.changeFileContent(`${currentDir}/${fileName}`, out.textContent);
                     } else {
@@ -1907,8 +1934,8 @@ Options:
                                 inputElement.disabled = true;
                                 fileSystem['/']['proc']['sysrq-trigger'] = '';
                                 setTimeout(function () {
-                                                               
-                                document.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+
+                                    document.location.href = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
                                 }, 1000);
                             }
                         }
