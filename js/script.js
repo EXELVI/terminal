@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputElement = document.querySelector('.input');
     const outputElement = document.querySelector('.output');
     const terminalElement = document.querySelector('.terminal');
-
+    const outputAfterInput = document.querySelector('.output-after-input');
     const prompt = document.getElementById('prompt');
     const barTitle = document.getElementById('bar-title');
 
@@ -623,8 +623,14 @@ javascript mode = "confirm-tempFunction()"`
 
     let passwordTemp = ""
 
+    //NANO
+    let innerHtmlNano = "" // Save the innerHTML of the page to restore it after nano
+
+    let posx = 0, // Cursor position
+        posy = 0;
+
     inputElement.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
+    if (event.key === 'Enter') {
             event.preventDefault();
             const input = inputElement.value;
 
@@ -1236,21 +1242,21 @@ javascript mode = "confirm-tempFunction()"`
             root: false,
             description: 'List files in the current directory',
             execute: function (input) {
-             
+
                 const output = document.createElement('div');
                 const params = input.split(' ');
                 const currentDirContent = navigateToPath(currentDir);
 
                 // if in params there is a directory
-             
+
                 if (params[2]) {
                     const target = navigateToPath(`${currentDir}/${params[2]}`);
                     if (target) currentDirContent = target;
                 } else if (params[1]) {
                     const target = navigateToPath(`${currentDir}/${params[1]}`);
                     if (target) currentDirContent = target;
-                }                    
-                
+                }
+
                 if (params[1] === '-la') {
                     Object.keys(currentDirContent).forEach(function (item) {
                         //list style
@@ -1285,11 +1291,11 @@ javascript mode = "confirm-tempFunction()"`
                                 output.textContent += item + ' ';
                             }
                         }
-    
+
                     });
                     return output;
                 }
-           
+
 
             }
         },
@@ -1664,7 +1670,7 @@ Options:
                         output.textContent = error;
                         return output;
                     }
-           
+
                 } else {
                     output.textContent = 'Welcome to JavaScript!\nTo exit press Ctrl + C or type .exit';
                     inputElement.value = '';
@@ -2036,6 +2042,74 @@ Resets:               ${stats.resets}
                 return output;
             }
 
+        },
+        {
+            name: "alias",
+            description: "Create an alias",
+            root: false,
+            execute: function (input) {
+                var output = document.createElement('div');
+                var parts = input.split(' ');
+                var bashAliases = fileSystemFunctions.readFileContent(`${settings.users.find(u => u.UID == settings.currentUser).home}/.bash_aliases`);
+                if (bashAliases) {
+                    bashAliases = bashAliases.split('\n');
+                    bashAliases.forEach(function (line) {
+                        if (line.split('=')[0] === parts[1]) {
+                            output.textContent = `alias: ${parts[1]}: already exists`;
+                            return output;
+                        }
+                    });
+                }
+
+                if (parts.length < 3) {
+                    output.textContent = `alias: missing operand`;
+                    return output;
+                }
+                var alias = parts[1];
+                var command = "'" + parts.slice(2).join(' ') + "'";
+                fileSystemFunctions.createFile(`${settings.users.find(u => u.UID == settings.currentUser).home}/.bash_aliases`, `${alias}=${command}`);
+                return output;
+            }
+        },
+        {
+            name: "unalias",
+            description: "Remove an alias",
+            root: false,
+            execute: function (input) {
+                var output = document.createElement('div');
+                var parts = input.split(' ');
+                var bashAliases = fileSystemFunctions.readFileContent(`${settings.users.find(u => u.UID == settings.currentUser).home}/.bash_aliases`);
+                if (bashAliases) {
+                    bashAliases = bashAliases.split('\n');
+                    var newAliases = bashAliases.filter(line => line.split('=')[0] !== parts[1]);
+                    fileSystemFunctions.changeFileContent(`${settings.users.find(u => u.UID == settings.currentUser).home}/.bash_aliases`, newAliases.join('\n'));
+                }
+                return output;
+            }
+        },
+        {
+            name: "nano",
+            description: "Edit a file",
+            root: false,
+            execute: function (input) {
+                var output = document.createElement('div');
+                var fileName = input.split(' ')[1];
+                if (fileName) {
+                    var fileContent = fileSystemFunctions.readFileContent(`${currentDir}/${fileName}`);
+                    if (fileContent !== false) {
+                        mode = "nano-" + fileName;
+                        innerHtmlNano = outputElement.innerHTML;
+                        outputElement.innerHTML = "<pre>" + fileContent + "</pre>";
+                        prompt.innerHTML = ``
+                    } else {
+                        output.innerText = `File not found: ${fileName}`;
+                        outputElement.appendChild(output);
+                    }
+                } else {
+                    output.innerText = "Usage: nano [filename]";
+                    outputElement.appendChild(output);
+                }
+            }
         }
 
     ];
@@ -2052,7 +2126,7 @@ Resets:               ${stats.resets}
         });
     }
 
-  
+
 
     if (localStorage.getItem('currentDir')) {
         currentDir = localStorage.getItem('currentDir');
@@ -2124,16 +2198,19 @@ Resets:               ${stats.resets}
                 alias = alias.split('\n');
                 alias.forEach(function (line) {
                     if (line.split('=')[0] === input.split(' ')[0]) {
-                        input = line.split('=')[1] + input.substring(input.indexOf(' '));
+                        input = line.split('=')[1].slice(1, -1) + ' ' + input.split(' ').slice(1).join(' ');
+                        command = commands.find(function (command) {
+                            return input.split(' ')[0] === command.name;
+                        });
                     }
                 });
             }
-             
+
             command = commands.find(function (command) {
                 return input.split(' ')[0] === command.name;
-            });       
-            
-            
+            });
+
+
         }
 
 
