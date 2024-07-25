@@ -2007,7 +2007,7 @@ Options:
                         var r = Math.floor(Math.random() * 256);
                         var g = Math.floor(Math.random() * 256);
                         var b = Math.floor(Math.random() * 256);
-                    } while (r + g + b < 128);
+                    } while (r + g + b < 60);
                     return { r, g, b };
                 }
 
@@ -2017,19 +2017,19 @@ Options:
                     totalErrors;
 
 
-                if (stats.commands) {
+                if (Object.keys(stats.commands).length > 0) {
                     mostUsedCommand = Object.keys(stats.commands).reduce((a, b) => stats.commands[a] > stats.commands[b] ? a : b);
                     totalCommands = Object.values(stats.commands).reduce((a, b) => a + b);
                 } else {
                     mostUsedCommand = 'N/A';
                     totalCommands = 0;
                 }
-                if (stats.screenshots != {}) {
+                if (Object.keys(stats.screenshots).length > 0) {
                     totalScreenshots = Object.values(stats.screenshots).reduce((a, b) => a + b);
                 } else {
                     totalScreenshots = 0;
                 }
-                if (stats.errors != {}) {
+                if (Object.keys(stats.errors).length > 0) {
                     totalErrors = Object.values(stats.errors).length;
                 } else {
                     totalErrors = 0;
@@ -2118,7 +2118,11 @@ Resets:               ${stats.resets}
                     fade.push(`rgb(${startColor.r + i * (endColor.r - startColor.r) / steps}, ${startColor.g + i * (endColor.g - startColor.g) / steps}, ${startColor.b + i * (endColor.b - startColor.b) / steps})`);
                 }
 
+             if (settings.colors) {
                 output.innerHTML = output.innerHTML.split('\n').map((line, i) => `<span style="color: ${fade[i]}">${line}</span>`).join('<br>');
+            } else {
+                output.innerHTML = output.innerHTML.split('\n').map((line, i) => line).join('<br>');
+            }
 
 
                 return output;
