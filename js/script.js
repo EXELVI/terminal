@@ -945,7 +945,7 @@ javascript mode = "confirm-tempFunction()"`
                         }
                     } catch (error) {
                         var output = document.createElement('div');
-                        output.textContent = "<span style='color: red'>An error occurred while trying to restore the prompt, please reload the page</span>";
+                        output.innerHTML = "<span style='color: red'>An error occurred while trying to restore the prompt, please reload the page</span>";
                         outputElement.appendChild(output);
                         terminalElement.scrollTop = terminalElement.scrollHeight;
                         prompt.textContent = " > ";
