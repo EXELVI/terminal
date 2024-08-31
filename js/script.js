@@ -949,7 +949,7 @@ javascript mode = "confirm-tempFunction()"`
                         outputElement.appendChild(output);
                         terminalElement.scrollTop = terminalElement.scrollHeight;
                         prompt.textContent = " > ";
-                    }
+                    } 
                     inputElement.value = '';
                     mode = "normal"
                     eval(functionString)
