@@ -937,10 +937,18 @@ javascript mode = "confirm-tempFunction()"`
 
                 if (input == "y") {
 
-                    if (settings.colors) {
-                        prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
-                    } else {
-                        prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                    try {
+                        if (settings.colors) {
+                            prompt.innerHTML = `<span style="color: ${settings.currentUser == 0 ? "#a82403" : "#34a853"}">${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}</span>:<span style="color: #3f65bd">${currentDir}</span>${settings.currentUser == 0 ? '#' : '$'}`;
+                        } else {
+                            prompt.textContent = `${settings.users.find(u => u.UID == settings.currentUser).name}@${browserName}:${currentDir}${settings.currentUser == 0 ? '#' : '$'}`;
+                        }
+                    } catch (error) {
+                        var output = document.createElement('div');
+                        output.textContent = "<span style='color: red'>An error occurred while trying to restore the prompt, please reload the page</span>";
+                        outputElement.appendChild(output);
+                        terminalElement.scrollTop = terminalElement.scrollHeight;
+                        prompt.textContent = " > ";
                     }
                     inputElement.value = '';
                     mode = "normal"
@@ -1518,7 +1526,7 @@ javascript mode = "confirm-tempFunction()"`
                 }
                 if (settingsUser) {
                     if (settingsUser.password == "") {
-                        settings.currentUser = settingsUser.UID;
+                         settings.currentUser = settingsUser.UID;
                         document.title = settings.users.find(u => u.UID == settings.currentUser)?.name + '@' + browserName;
                         barTitle.textContent = settings.users.find(u => u.UID == settings.currentUser)?.name + '@' + browserName;
                         if (settings.colors) {
